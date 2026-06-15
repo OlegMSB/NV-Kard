@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>НВ-КАРД v1.7.5</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.4/pizzip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.37.2/docxtemplater.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #FFFFFF; --text-primary: #1A1A1A; --text-secondary: #5A5A5A;
+            --accent: #E65C00; --accent-hover: #cc5200; --border: #E0E0E0;
+            --row-hover: rgba(230, 92, 0, 0.08); --row-zebra: rgba(0, 0, 0, 0.02);
+            --error: #C62828; --success: #2E7D32; --warning: #F57C00;
+            --font-main: 'Onest', system-ui, -apple-system, sans-serif;
+        }
+        [data-theme="dark"] {
+            --bg-primary: #121212; --text-primary: #EAEAEA; --text-secondary: #9E9E9E;
+            --accent: #FF8A3D; --accent-hover: #e67a34; --border: #2C2C2C;
+            --row-hover: rgba(255, 138, 61, 0.12); --row-zebra: rgba(255, 255, 255, 0.04);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-main); background-color: var(--bg-primary); color: var(--text-primary); font-size: 14px; line-height: 1.4; transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; height: 100vh; display: flex; flex-direction: column; }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+        .hidden { display: none !important; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-family: var(--font-main); font-weight: 500; font-size: 14px; transition: all 0.2s ease-in-out; display: inline-flex; align-items: center; gap: 6px; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background-color: var(--accent); color: white; }
+        .btn-primary:hover { filter: brightness(0.95); }
+        .btn-secondary { background-color: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+        .btn-danger { background-color: var(--error); color: white; }
+        .btn-warning { background-color: var(--warning); color: white; }
+        .btn-sm { padding: 4px 8px; font-size: 12px; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        #login-screen { flex: 1; display: flex; align-items: center; justify-content: center; background-color: var(--bg-primary); }
+        .login-box { width: 100%; max-width: 400px; padding: 32px; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .login-box h2 { margin-bottom: 24px; text-align: center; color: var(--accent); }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-secondary); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; background-color: var(--bg-primary); color: var(--text-primary); font-family: var(--font-main); font-size: 14px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .error-msg { color: var(--error); font-size: 12px; margin-top: 8px; text-align: center; min-height: 18px; }
+        .dev-mode-hint { font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-style: italic; }
+        header { height: 60px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background-color: var(--bg-primary); }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .logo { font-size: 20px; font-weight: 600; color: var(--accent); }
+        .role-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; color: white; }
+        .role-employee { background-color: #E65C00; }
+        .role-admin { background-color: #1565C0; }
+        .role-superadmin { background-color: #2E7D32; }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .save-status { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+        .version-info { font-size: 11px; color: var(--text-secondary); text-align: right; line-height: 1.2; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 24px; background-color: var(--bg-primary); }
+        .tab-btn { padding: 12px 20px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-secondary); font-family: var(--font-main); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out; }
+        .tab-btn:hover { color: var(--text-primary); }
+        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+        main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 16px 24px; }
+        .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        .tab-content.active { display: flex; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+        .toolbar-filters { display: flex; gap: 12px; align-items: center; }
+        .table-container { flex: 1; overflow: auto; border: 1px solid var(--border); border-radius: 4px; position: relative; }
+        .data-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1100px; }
+        .data-table th, .data-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .data-table th { position: sticky; top: 0; z-index: 20; background-color: var(--bg-primary); font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); cursor: pointer; user-select: none; transition: background-color 0.2s ease-in-out; }
+        .data-table th:hover { background-color: var(--row-hover); }
+        .data-table th.sortable::after { content: ' '; font-size: 10px; opacity: 0.3; }
+        .data-table th.sort-asc::after { content: ' ↑'; opacity: 1; color: var(--accent); }
+        .data-table th.sort-desc::after { content: ' ↓'; opacity: 1; color: var(--accent); }
+        .data-table th.no-sort { cursor: default; }
+        .data-table th.no-sort:hover { background-color: var(--bg-primary); }
+        .data-table th:nth-child(1), .data-table td:nth-child(1), .data-table th:nth-child(2), .data-table td:nth-child(2), .data-table th:nth-child(3), .data-table td:nth-child(3) { position: sticky; left: 0; z-index: 15; background-color: var(--bg-primary); border-right: 1px solid var(--border); }
+        .data-table th:nth-child(2), .data-table td:nth-child(2) { left: 40px; }
+        .data-table th:nth-child(3), .data-table td:nth-child(3) { left: 140px; }
+        .data-table tbody tr:nth-child(even) { background-color: var(--row-zebra); }
+        .data-table tbody tr:hover { background-color: var(--row-hover); }
+        .data-table input, .data-table select { width: 100%; padding: 4px 6px; border: 1px solid var(--border); border-radius: 3px; background-color: var(--bg-primary); color: var(--text-primary); font-size: 13px; }
+        .data-table input[type="checkbox"] { width: auto; cursor: pointer; }
+        .deduction-cell { display: flex; align-items: center; gap: 6px; position: relative; }
+        .deduction-value-input { width: 60px !important; text-align: center; }
+        .deduction-type-select { min-width: 120px; }
+        .deduction-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background-color: var(--text-primary); color: var(--bg-primary); padding: 6px 10px; border-radius: 4px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .deduction-cell:hover .deduction-tooltip { opacity: 1; }
+        .settings-block { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; background-color: var(--bg-primary); overflow: hidden; }
+        .settings-block-header { padding: 14px 20px; cursor: pointer; user-select: none; transition: background-color 0.2s ease-in-out; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .settings-block-header:hover { background-color: var(--row-hover); }
+        .settings-block-header-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+        .accordion-icon { font-size: 12px; color: var(--text-secondary); transition: transform 0.2s ease-in-out; flex-shrink: 0; }
+        .settings-block.expanded .accordion-icon { transform: rotate(90deg); }
+        .settings-block-title { font-weight: 600; font-size: 15px; color: var(--text-primary); white-space: nowrap; }
+        .settings-block-hint { font-size: 12px; color: var(--text-secondary); margin-left: 8px; font-weight: 400; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .settings-block-stats { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .stat-badge { background-color: var(--row-zebra); color: var(--text-secondary); padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+        .stat-badge.accent { background-color: var(--row-hover); color: var(--accent); }
+        .settings-block-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out; padding: 0 20px; }
+        .settings-block.expanded .settings-block-body { max-height: 5000px; padding: 16px 20px 20px; border-top: 1px solid var(--border); }
+        .settings-block-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .settings-row:last-child { border-bottom: none; }
+        .password-field { font-family: monospace; letter-spacing: 2px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out; }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal { background-color: var(--bg-primary); padding: 24px; border-radius: 8px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; transform: translateY(20px); transition: transform 0.2s ease-in-out; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        .modal-overlay.active .modal { transform: translateY(0); }
+        .modal h3 { margin-bottom: 16px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+        .version-group { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; overflow: hidden; }
+        .version-group-header { background-color: var(--row-zebra); padding: 12px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease-in-out; }
+        .version-group-header:hover { background-color: var(--row-hover); }
+        .version-group-header-left { display: flex; align-items: center; gap: 8px; flex: 1; }
+        .version-group-icon { font-size: 12px; color: var(--text-secondary); transition: transform 0.2s ease-in-out; }
+        .version-group.expanded .version-group-icon { transform: rotate(90deg); }
+        .version-group-title { font-weight: 600; font-size: 14px; color: var(--text-primary); }
+        .version-group-summary { font-size: 12px; color: var(--text-secondary); margin-left: 8px; }
+        .version-group-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out; padding: 0 16px; }
+        .version-group.expanded .version-group-body { max-height: 5000px; padding: 12px 16px; border-top: 1px solid var(--border); }
+        .version-card { border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; margin-bottom: 10px; background-color: var(--row-zebra); transition: all 0.2s ease-in-out; position: relative; }
+        .version-card:hover { background-color: var(--row-hover); }
+        .version-card.active { border-left: 4px solid var(--success); background-color: var(--row-hover); }
+        .version-card.modified { border-left: 4px solid var(--warning); background-color: rgba(245, 124, 0, 0.08); }
+        .version-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+        .version-card-title { font-weight: 600; font-size: 14px; color: var(--text-primary); }
+        .version-card-date { font-size: 12px; color: var(--text-secondary); font-style: italic; }
+        .version-card-body { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.5; }
+        .version-card-body strong { color: var(--text-primary); }
+        .version-card-actions { display: flex; gap: 6px; justify-content: flex-end; }
+        .modification-badge { display: inline-flex; align-items: center; gap: 4px; background-color: var(--warning); color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-left: 8px; }
+        .audit-log-entry { border-left: 3px solid var(--accent); padding: 12px 16px; margin-bottom: 10px; background-color: var(--row-zebra); border-radius: 0 6px 6px 0; }
+        .audit-log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+        .audit-log-user { font-weight: 600; color: var(--accent); }
+        .audit-log-date { font-size: 12px; color: var(--text-secondary); }
+        .audit-log-details { font-size: 13px; color: var(--text-secondary); margin-top: 6px; line-height: 1.6; }
+        .audit-log-change { background-color: var(--bg-primary); padding: 8px; border-radius: 4px; margin: 4px 0; font-family: monospace; font-size: 12px; }
+        .audit-log-reason { margin-top: 8px; padding: 8px; background-color: rgba(245, 124, 0, 0.1); border-radius: 4px; font-size: 13px; }
+        .audit-log-reason strong { color: var(--warning); }
+        .act-document { background: white; padding: 40px; font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.5; color: black; }
+        .act-header { text-align: center; margin-bottom: 30px; }
+        .act-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; }
+        .act-period { text-align: center; margin: 20px 0; }
+        .act-location-date { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .act-parties { margin-bottom: 20px; text-align: justify; }
+        .act-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px; }
+        .act-table th, .act-table td { border: 1px solid black; padding: 6px; text-align: left; }
+        .act-table th { background-color: #f0f0f0; font-weight: bold; }
+        .act-signatures { display: flex; justify-content: space-between; margin-top: 40px; }
+        .act-signature-block { width: 45%; }
+        .act-signature-line { margin-top: 30px; border-top: 1px solid black; padding-top: 5px; }
+        .badge-current { background-color: var(--success); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+        .badge-archived { background-color: var(--text-secondary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+        .accordion-controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .warning-box { background-color: rgba(245, 124, 0, 0.1); border-left: 4px solid var(--warning); padding: 12px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+        .warning-box strong { color: var(--warning); }
+        .exclude-checkbox { cursor: pointer; width: 18px; height: 18px; }
+        .price-info { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+        @media print { header, .tabs, .toolbar, .no-print { display: none !important; } body { background-color: white !important; color: black !important; } .modal-overlay.active { position: static; background: none; } .modal { box-shadow: none; max-height: none; overflow: visible; transform: none; padding: 0; width: 100%; } }
+    </style>
+</head>
+<body>
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.7.5</span></h2>
+            <div class="form-group">
+                <label for="dev-user-select">Быстрый вход (Dev Mode)</label>
+                <select id="dev-user-select"><option value="">-- Выберите пользователя для теста --</option></select>
+                <div class="dev-mode-hint">✓ Без пароля для тестирования</div>
+            </div>
+            <div style="text-align:center; margin: 16px 0; color: var(--text-secondary); font-size: 13px;">или</div>
+            <div class="form-group"><label for="login-username">Логин</label><input type="text" id="login-username" autocomplete="off" placeholder="Введите логин"></div>
+            <div class="form-group"><label for="login-password">Пароль</label><input type="password" id="login-password" placeholder="Введите пароль"></div>
+            <button class="btn btn-primary" style="width:100%" onclick="App.auth.login()">Войти</button>
+            <div id="login-error" class="error-msg"></div>
+        </div>
+    </div>
+    <div id="app-screen" class="hidden">
+        <header>
+            <div class="header-left">
+                <div class="logo">НВ-КАРД</div>
+                <span id="user-role-badge" class="role-badge"></span>
+                <select id="role-switcher" class="hidden" style="padding:4px; border-radius:4px; border:1px solid var(--border); font-size:12px;" onchange="App.ui.switchRoleView(this.value)">
+                    <option value="superadmin">Просмотр как: Супер-админ</option>
+                    <option value="admin">Просмотр как: Администратор</option>
+                    <option value="employee">Просмотр как: Сотрудник</option>
+                </select>
+            </div>
+            <div class="header-right">
+                <div id="save-status" class="save-status" aria-live="polite"><span>✓</span> Сохранено</div>
+                <button class="btn btn-sm btn-secondary" onclick="App.ui.toggleTheme()">☀️/🌙</button>
+                <button class="btn btn-sm btn-secondary" onclick="App.data.exportJSON()">⬇ JSON</button>
+                <label class="btn btn-sm btn-secondary" style="margin:0; cursor: pointer;">⬆ JSON <input type="file" class="hidden" accept=".json" onchange="App.data.importJSON(this)"></label>
+                <button class="btn btn-sm btn-danger" onclick="App.auth.logout()">Выход</button>
+                <div class="version-info">v1.7.5<br>Разработчик: Трегубов Олег</div>
+            </div>
+        </header>
+        <nav class="tabs">
+            <button class="tab-btn active" onclick="App.ui.showTab('current-work')">Текущая работа</button>
+            <button class="tab-btn" onclick="App.ui.showTab('acts')">Акты</button>
+            <button class="tab-btn admin-only hidden" onclick="App.ui.showTab('settings')">Настройки НВ</button>
+        </nav>
+        <main>
+            <div id="tab-current-work" class="tab-content active">
+                <div class="toolbar">
+                    <div class="toolbar-filters">
+                        <select id="cw-filter-user" class="admin-only hidden" onchange="App.ui.renderCurrentWork()"><option value="all">Все сотрудники</option></select>
+                        <input type="text" id="cw-search" placeholder="Поиск по заявке или ФИО..." style="padding:8px; border:1px solid var(--border); border-radius:4px; min-width: 250px;" oninput="App.ui.renderCurrentWork()">
+                    </div>
+                    <button class="btn btn-primary" onclick="App.logic.addTaskRow()">+ Добавить строку</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="cw-table">
+                        <thead><tr>
+                            <th style="width:40px" class="sortable" data-sort="index">№</th>
+                            <th style="width:100px" class="sortable" data-sort="certificate">Заявка</th>
+                            <th style="width:150px" class="sortable" data-sort="client_fio">ФИО клиента</th>
+                            <th style="width:120px" class="sortable" data-sort="partner">Партнер</th>
+                            <th style="width:100px" class="sortable" data-sort="tariff">Тариф</th>
+                            <th style="width:100px" class="sortable" data-sort="status">Статус</th>
+                            <th style="width:110px" class="sortable" data-sort="fill_date">Дата</th>
+                            <th style="width:80px" class="sortable" data-sort="tax_period">Нал. период</th>
+                            <th style="width:80px" class="sortable" data-sort="nd_count">Кол-во НД</th>
+                            <th style="width:150px" class="sortable" data-sort="comments">Комментарий</th>
+                            <th style="width:200px" class="sortable" data-sort="deduction_value">Кол-во зачтенных к выплате</th>
+                            <th style="width:120px" class="sortable" data-sort="executor">Исполнитель</th>
+                            <th style="width:50px" class="no-sort" title="Исключить из актов">🚫</th>
+                            <th style="width:80px" class="no-sort">Действия</th>
+                        </tr></thead>
+                        <tbody id="cw-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="tab-acts" class="tab-content">
+                <div class="toolbar">
+                    <div class="toolbar-filters">
+                        <select id="act-filter-executor" onchange="App.ui.renderActs()"><option value="all">Все исполнители</option></select>
+                        <select id="act-month" onchange="App.ui.renderActs()">
+                            <option value="1">Январь</option><option value="2">Февраль</option><option value="3">Март</option><option value="4">Апрель</option>
+                            <option value="5">Май</option><option value="6">Июнь</option><option value="7">Июль</option><option value="8">Август</option>
+                            <option value="9">Сентябрь</option><option value="10">Октябрь</option><option value="11">Ноябрь</option><option value="12">Декабрь</option>
+                        </select>
+                        <select id="act-year" onchange="App.ui.renderActs()"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
+                        <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="act-grouped" onchange="App.ui.renderActs()"> Группировать по видам вычетов</label>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-primary" onclick="App.export.generateExcel()">📄 Экспорт в Excel</button>
+                        <button class="btn btn-primary" onclick="App.export.generateWord()">📝 Экспорт в Word</button>
+                        <button class="btn btn-secondary" onclick="App.export.showActPreview()">📋 Просмотр акта</button>
+                        <button class="btn btn-secondary" onclick="window.print()">🖨 Печать / PDF</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="act-table">
+                        <thead><tr><th>Вид оплат</th><th>Вид вычета</th><th>Описание (Заявка + ФИО)</th><th>Цена</th><th>Ед. изм.</th><th>Кол-во</th><th>Сумма</th></tr></thead>
+                        <tbody id="act-tbody"></tbody>
+                        <tfoot id="act-tfoot" style="font-weight:600; background-color: var(--row-zebra);"></tfoot>
+                    </table>
+                </div>
+            </div>
+            <div id="tab-settings" class="tab-content">
+                <div class="accordion-controls">
+                    <button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllBlocks()">📂 Развернуть все блоки</button>
+                    <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseAllBlocks()">📁 Свернуть все блоки</button>
+                    <button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllGroups()">📖 Развернуть все группы</button>
+                    <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseAllGroups()">📕 Свернуть все группы</button>
+                </div>
+                
+                <div class="settings-block" id="settings-block-1">
+                    <div class="settings-block-header" onclick="App.ui.toggleBlock('settings-block-1')">
+                        <div class="settings-block-header-left">
+                            <span class="accordion-icon">▶</span>
+                            <span class="settings-block-title">Блок 1. Сотрудники</span>
+                            <span class="settings-block-hint">Управление учетными записями, паролями и архивацией</span>
+                        </div>
+                        <div class="settings-block-stats" id="block-1-stats"></div>
+                    </div>
+                    <div class="settings-block-body">
+                        <div class="settings-block-actions">
+                            <button class="btn btn-primary btn-sm" onclick="App.settings.showAddEmployeeModal()">+ Добавить сотрудника</button>
+                        </div>
+                        <div id="settings-employees-list"></div>
+                    </div>
+                </div>
+
+                <div class="settings-block" id="settings-block-2">
+                    <div class="settings-block-header" onclick="App.ui.toggleBlock('settings-block-2')">
+                        <div class="settings-block-header-left">
+                            <span class="accordion-icon">▶</span>
+                            <span class="settings-block-title">Блок 2. Вычеты и цены</span>
+                            <span class="settings-block-hint">История изменения стоимости налоговых вычетов</span>
+                        </div>
+                        <div class="settings-block-stats" id="block-2-stats"></div>
+                    </div>
+                    <div class="settings-block-body">
+                        <div class="settings-block-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="App.ui.expandGroup('block-2')">Развернуть все группы</button>
+                            <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseGroup('block-2')">Свернуть все группы</button>
+                            <button class="btn btn-primary btn-sm" onclick="App.settings.showAddDeductionModal()">+ Добавить версию цены вычета</button>
+                        </div>
+                        <div id="settings-deductions-list"></div>
+                    </div>
+                </div>
+
+                <div class="settings-block" id="settings-block-3">
+                    <div class="settings-block-header" onclick="App.ui.toggleBlock('settings-block-3')">
+                        <div class="settings-block-header-left">
+                            <span class="accordion-icon">▶</span>
+                            <span class="settings-block-title">Блок 3. Сведения Заказчика</span>
+                            <span class="settings-block-hint">Версионный справочник данных для актов</span>
+                        </div>
+                        <div class="settings-block-stats" id="block-3-stats"></div>
+                    </div>
+                    <div class="settings-block-body">
+                        <div class="settings-block-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="App.ui.expandGroup('block-3')">Развернуть все группы</button>
+                            <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseGroup('block-3')">Свернуть все группы</button>
+                            <button class="btn btn-primary btn-sm" onclick="App.settings.showAddActInfoModal()">+ Добавить версию сведений Заказчика</button>
+                        </div>
+                        <div id="settings-act-info-list"></div>
+                    </div>
+                </div>
+
+                <div class="settings-block" id="settings-block-4">
+                    <div class="settings-block-header" onclick="App.ui.toggleBlock('settings-block-4')">
+                        <div class="settings-block-header-left">
+                            <span class="accordion-icon">▶</span>
+                            <span class="settings-block-title">Блок 4. Договоры сотрудников</span>
+                            <span class="settings-block-hint">Журнал изменений дат договоров</span>
+                        </div>
+                        <div class="settings-block-stats" id="block-4-stats"></div>
+                    </div>
+                    <div class="settings-block-body">
+                        <div class="settings-block-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="App.ui.expandGroup('block-4')">Развернуть все группы</button>
+                            <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseGroup('block-4')">Свернуть все группы</button>
+                        </div>
+                        <div id="settings-contracts-list"></div>
+                    </div>
+                </div>
+
+                <div class="settings-block" id="settings-block-5">
+                    <div class="settings-block-header" onclick="App.ui.toggleBlock('settings-block-5')">
+                        <div class="settings-block-header-left">
+                            <span class="accordion-icon">▶</span>
+                            <span class="settings-block-title">Блок 5. Журнал аудита изменений</span>
+                            <span class="settings-block-hint">История всех изменений версионных данных</span>
+                        </div>
+                        <div class="settings-block-stats" id="block-5-stats"></div>
+                    </div>
+                    <div class="settings-block-body">
+                        <div id="audit-log-list"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-add-employee" class="modal-overlay">
+        <div class="modal">
+            <h3>Добавить нового сотрудника</h3>
+            <div class="form-group"><label>ФИО сотрудника *</label><input type="text" id="new-employee-name" placeholder="Например: Иванов Иван Иванович"></div>
+            <div class="form-group"><label>Логин *</label><input type="text" id="new-employee-login" placeholder="Например: ivanov.ii"></div>
+            <div class="form-group"><label>Пароль * (минимум 6 символов)</label><input type="text" id="new-employee-password"><div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Рекомендуется использовать буквы и цифры</div></div>
+            <div class="form-group"><label>Роль</label><select id="new-employee-role"><option value="employee">Сотрудник</option><option value="admin">Администратор</option><option value="superadmin">Супер-администратор</option></select></div>
+            <div class="modal-actions"><button class="btn btn-secondary" onclick="App.ui.closeModal('modal-add-employee')">Отмена</button><button class="btn btn-primary" onclick="App.settings.addEmployee()">Добавить</button></div>
+        </div>
+    </div>
+
+    <div id="modal-add-deduction" class="modal-overlay">
+        <div class="modal">
+            <h3>Добавить версию цены вычета</h3>
+            <div class="form-group"><label>Вид вычета *</label><select id="new-deduction-name"><option value="">-- Выберите вид вычета --</option></select></div>
+            <div class="form-group"><label>Цена за заполнение (руб.) *</label><input type="number" id="new-deduction-price-fill" min="0" step="0.01" placeholder="Например: 300"></div>
+            <div class="form-group"><label>Цена за проверку (руб.) *</label><input type="number" id="new-deduction-price-check" min="0" step="0.01" placeholder="Например: 310"></div>
+            <div class="form-group"><label>Единица измерения</label><select id="new-deduction-unit"><option value="штука">штука</option><option value="стр.">стр.</option></select></div>
+            <div class="form-group"><label>Дата начала действия *</label><input type="date" id="new-deduction-date"></div>
+            <div class="modal-actions"><button class="btn btn-secondary" onclick="App.ui.closeModal('modal-add-deduction')">Отмена</button><button class="btn btn-primary" onclick="App.settings.addDeductionPrice()">Сохранить</button></div>
+        </div>
+    </div>
+
+    <div id="modal-edit-deduction" class="modal-overlay">
+        <div class="modal">
+            <h3>Редактировать версию цены вычета</h3>
+            <input type="hidden" id="edit-deduction-id">
+            <div class="form-group"><label>Вид вычета</label><input type="text" id="edit-deduction-name" readonly style="background-color: var(--row-zebra);"></div>
+            <div class="form-group"><label>Цена за заполнение (руб.) *</label><input type="number" id="edit-deduction-price-fill" min="0" step="0.01"></div>
+            <div class="form-group"><label>Цена за проверку (руб.) *</label><input type="number" id="edit-deduction-price-check" min="0" step="0.01"></div>
+            <div class="form-group"><label>Единица измерения</label><select id="edit-deduction-unit"><option value="штука">штука</option><option value="стр.">стр.</option></select></div>
+            <div class="form-group"><label>Дата начала действия *</label><input type="date" id="edit-deduction-date"></div>
+            <div class="form-group"><label>Дата окончания действия</label><input type="date" id="edit-deduction-end-date"><div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Дата окончания рассчитывается автоматически, но можно изменить вручную</div></div>
+            <div class="form-group"><label>Причина изменения *</label><textarea id="edit-deduction-reason" placeholder="Опишите причину изменения (например: Ошибка ввода при создании, Уточнение цены и т.д.)"></textarea><div class="warning-box"><strong>⚠️ Внимание:</strong> Вы редактируете <span id="edit-deduction-version-type">версию</span>. Это изменение будет зафиксировано в журнале аудита.</div></div>
+            <div class="modal-actions">
+                <button class="btn btn-warning" onclick="App.settings.restoreDeductionOriginal()">↩️ Восстановить оригинал</button>
+                <button class="btn btn-danger" onclick="App.settings.deleteDeductionVersion()">🗑️ Удалить версию</button>
+                <button class="btn btn-secondary" onclick="App.ui.closeModal('modal-edit-deduction')">Отмена</button>
+                <button class="btn btn-primary" onclick="App.settings.saveDeductionEdit()">💾 Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-act-info" class="modal-overlay">
+        <div class="modal">
+            <h3>Добавить версию сведений Заказчика</h3>
+            <div class="form-group"><label>ФИО Заказчика *</label><input type="text" id="new-ai-name"></div>
+            <div class="form-group"><label>Доверенность Заказчика *</label><input type="text" id="new-ai-poa"></div>
+            <div class="form-group"><label>Краткое ФИО Заказчика *</label><input type="text" id="new-ai-short"></div>
+            <div class="form-group"><label>Дата действия полномочий Заказчика (начало) *</label><input type="date" id="new-ai-date"><div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Дата окончания предыдущей версии будет установлена автоматически (день, предшествующий этой дате)</div></div>
+            <div class="modal-actions"><button class="btn btn-secondary" onclick="App.ui.closeModal('modal-add-act-info')">Отмена</button><button class="btn btn-primary" onclick="App.settings.addActInfoVersion()">Сохранить</button></div>
+        </div>
+    </div>
+
+    <div id="modal-edit-act-info" class="modal-overlay">
+        <div class="modal">
+            <h3>Редактировать версию сведений Заказчика</h3>
+            <input type="hidden" id="edit-ai-id">
+            <div class="form-group"><label>ФИО Заказчика *</label><input type="text" id="edit-ai-name"></div>
+            <div class="form-group"><label>Доверенность Заказчика *</label><input type="text" id="edit-ai-poa"></div>
+            <div class="form-group"><label>Краткое ФИО Заказчика *</label><input type="text" id="edit-ai-short"></div>
+            <div class="form-group"><label>Дата действия полномочий (начало) *</label><input type="date" id="edit-ai-date"><div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Дата окончания предыдущей версии пересчитается автоматически</div></div>
+            <div class="form-group"><label>Дата окончания действия</label><input type="date" id="edit-ai-end-date" readonly style="background-color: var(--row-zebra);"><div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Дата окончания рассчитывается автоматически</div></div>
+            <div class="form-group"><label>Причина изменения *</label><textarea id="edit-ai-reason" placeholder="Опишите причину изменения"></textarea><div class="warning-box"><strong>⚠️ Внимание:</strong> Вы редактируете <span id="edit-ai-version-type">версию</span>. Это изменение будет зафиксировано в журнале аудита.</div></div>
+            <div class="modal-actions">
+                <button class="btn btn-warning" onclick="App.settings.restoreActInfoOriginal()">↩️ Восстановить оригинал</button>
+                <button class="btn btn-danger" onclick="App.settings.deleteActInfoVersion()">🗑️ Удалить версию</button>
+                <button class="btn btn-secondary" onclick="App.ui.closeModal('modal-edit-act-info')">Отмена</button>
+                <button class="btn btn-primary" onclick="App.settings.saveActInfoEdit()">💾 Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-contract" class="modal-overlay">
+        <div class="modal">
+            <h3>Добавить версию договора сотрудника</h3>
+            <input type="hidden" id="new-contract-user-id">
+            <div class="form-group"><label>Сотрудник</label><input type="text" id="new-contract-user-name" readonly style="background-color: var(--row-zebra);"></div>
+            <div class="form-group"><label>Дата договора *</label><input type="date" id="new-contract-date"></div>
+            <div class="form-group"><label>Дата начала действия *</label><input type="date" id="new-contract-effective"><div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Дата окончания предыдущей версии будет установлена автоматически</div></div>
+            <div class="modal-actions"><button class="btn btn-secondary" onclick="App.ui.closeModal('modal-add-contract')">Отмена</button><button class="btn btn-primary" onclick="App.settings.addContractVersion()">Сохранить</button></div>
+        </div>
+    </div>
+
+    <div id="modal-edit-contract" class="modal-overlay">
+        <div class="modal">
+            <h3>Редактировать версию договора сотрудника</h3>
+            <input type="hidden" id="edit-contract-id">
+            <input type="hidden" id="edit-contract-user-id">
+            <div class="form-group"><label>Сотрудник</label><input type="text" id="edit-contract-user-name" readonly style="background-color: var(--row-zebra);"></div>
+            <div class="form-group"><label>Дата договора *</label><input type="date" id="edit-contract-date"></div>
+            <div class="form-group"><label>Дата начала действия *</label><input type="date" id="edit-contract-effective"><div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Дата окончания предыдущей версии пересчитается автоматически</div></div>
+            <div class="form-group"><label>Дата окончания действия</label><input type="date" id="edit-contract-end-date" readonly style="background-color: var(--row-zebra);"><div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Дата окончания рассчитывается автоматически</div></div>
+            <div class="form-group"><label>Причина изменения *</label><textarea id="edit-contract-reason" placeholder="Опишите причину изменения"></textarea><div class="warning-box"><strong>⚠️ Внимание:</strong> Вы редактируете <span id="edit-contract-version-type">версию</span>. Это изменение будет зафиксировано в журнале аудита.</div></div>
+            <div class="modal-actions">
+                <button class="btn btn-warning" onclick="App.settings.restoreContractOriginal()">↩️ Восстановить оригинал</button>
+                <button class="btn btn-danger" onclick="App.settings.deleteContractVersion()">🗑️ Удалить версию</button>
+                <button class="btn btn-secondary" onclick="App.ui.closeModal('modal-edit-contract')">Отмена</button>
+                <button class="btn btn-primary" onclick="App.settings.saveContractEdit()">💾 Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-act-preview" class="modal-overlay">
+        <div class="modal" style="max-width: 900px;">
+            <h3>Просмотр акта</h3>
+            <div id="act-preview-content"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="App.ui.closeModal('modal-act-preview')">Закрыть</button>
+                <button class="btn btn-primary" onclick="App.export.downloadActPDF()">Скачать PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-delete" class="modal-overlay">
+        <div class="modal">
+            <h3>Подтверждение удаления</h3>
+            <p>Вы уверены, что хотите удалить эту строку? Это действие нельзя отменить. Нумерация строк будет пересчитана.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="App.ui.closeModal('modal-delete')">Отмена</button>
+                <button class="btn btn-danger" id="confirm-delete-btn">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            version: '1.7.5',
+            dbName: 'NVKardDB',
+            dbVersion: 6,
+            inactivityTimeout: 60 * 60 * 1000,
+            autoSaveInterval: 60 * 1000,
+            initialUsers: [
+                { id: 'u1', login: 'skvortsova.ts', password_hash: '', role: 'employee', full_name: 'Скворцова Т.С.', is_archived: false },
+                { id: 'u2', login: 'lysova.nv', password_hash: '', role: 'employee', full_name: 'Лысова Н.В.', is_archived: false },
+                { id: 'u3', login: 'belkova.em', password_hash: '', role: 'employee', full_name: 'Белкова Е.М.', is_archived: false },
+                { id: 'u4', login: 'strelkova.ev', password_hash: '', role: 'employee', full_name: 'Стрелкова Е.В.', is_archived: false },
+                { id: 'u5', login: 'shmelev.aa', password_hash: '', role: 'employee', full_name: 'Шмелев А.А.', is_archived: false },
+                { id: 'u6', login: 'gusenkova.ti', password_hash: '', role: 'employee', full_name: 'Гусенкова Т.И.', is_archived: false },
+                { id: 'u7', login: 'shalashova.vs', password_hash: '', role: 'employee', full_name: 'Шалашова В.С.', is_archived: false },
+                { id: 'a1', login: 'utkina.i', password_hash: '', role: 'admin', full_name: 'Уткина Ирина', is_archived: false },
+                { id: 'a2', login: 'shushkova.o', password_hash: '', role: 'admin', full_name: 'Шушкова Ольга', is_archived: false },
+                { id: 's1', login: 'kozachenko.o', password_hash: '', role: 'superadmin', full_name: 'Козаченко Оксана', is_archived: false },
+                { id: 's2', login: 'tregubov.o', password_hash: '', role: 'superadmin', full_name: 'Трегубов Олег', is_archived: false }
+            ],
+            initialPasswords: {
+                'skvortsova.ts': 'NvKard2026!', 'lysova.nv': 'NvKard2026!', 'belkova.em': 'NvKard2026!',
+                'strelkova.ev': 'NvKard2026!', 'shmelev.aa': 'NvKard2026!', 'gusenkova.ti': 'NvKard2026!',
+                'shalashova.vs': 'NvKard2026!', 'utkina.i': 'AdminNv2026!', 'shushkova.o': 'AdminNv2026!',
+                'kozachenko.o': 'SuperNv2026!', 'tregubov.o': 'SuperNv2026!'
+            },
+            initialDeductions: [
+                { id: 'd1', name: 'Имущественный вычет', price_fill: 300, price_check: 310, unit: 'штука', effective_date: '2022-01-01', end_date: null, original_price_fill: 300, original_price_check: 310, original_unit: 'штука', original_effective_date: '2022-01-01' },
+                { id: 'd2', name: 'Социальный вычет', price_fill: 230, price_check: 240, unit: 'штука', effective_date: '2022-01-01', end_date: null, original_price_fill: 230, original_price_check: 240, original_unit: 'штука', original_effective_date: '2022-01-01' },
+                { id: 'd3', name: 'Инвестиционный вычет', price_fill: 230, price_check: 240, unit: 'штука', effective_date: '2022-01-01', end_date: null, original_price_fill: 230, original_price_check: 240, original_unit: 'штука', original_effective_date: '2022-01-01' },
+                { id: 'd4', name: 'ЦБ (учет убытков, сальдирование)', price_fill: 200, price_check: 210, unit: 'штука', effective_date: '2022-01-01', end_date: null, original_price_fill: 200, original_price_check: 210, original_unit: 'штука', original_effective_date: '2022-01-01' },
+                { id: 'd5', name: 'Декларирование доходов, полученных на территории РФ', price_fill: 301, price_check: 311, unit: 'стр.', effective_date: '2022-01-01', end_date: null, original_price_fill: 301, original_price_check: 311, original_unit: 'стр.', original_effective_date: '2022-01-01' },
+                { id: 'd6', name: 'Декларирование доходов, полученных за пределами РФ', price_fill: 31, price_check: 41, unit: 'стр.', effective_date: '2022-01-01', end_date: null, original_price_fill: 31, original_price_check: 41, original_unit: 'стр.', original_effective_date: '2022-01-01' }
+            ],
+            initialActInfoVersions: [
+                { id: 'ai1', full_name: 'Руководителя обособленного подразделения г. Владимира Гребневой Натальи Владимировны', poa: 'Доверенности от «01» апреля 2025 года № 81', short_name: 'Н.В. Гребнева', effective_date: '2025-04-01', end_date: null, original_full_name: 'Руководителя обособленного подразделения г. Владимира Гребневой Натальи Владимировны', original_poa: 'Доверенности от «01» апреля 2025 года № 81', original_short_name: 'Н.В. Гребнева', original_effective_date: '2025-04-01' }
+            ],
+            initialContractVersions: {
+                'u1': [{ id: 'c1', contract_date: '2026-01-01', effective_date: '2026-01-01', end_date: null, original_contract_date: '2026-01-01', original_effective_date: '2026-01-01' }],
+                'u2': [{ id: 'c2', contract_date: '2026-02-02', effective_date: '2026-02-02', end_date: null, original_contract_date: '2026-02-02', original_effective_date: '2026-02-02' }],
+                'u3': [{ id: 'c3', contract_date: '2026-06-01', effective_date: '2026-06-01', end_date: null, original_contract_date: '2026-06-01', original_effective_date: '2026-06-01' }],
+                'u4': [{ id: 'c4', contract_date: '2026-04-13', effective_date: '2026-04-13', end_date: null, original_contract_date: '2026-04-13', original_effective_date: '2026-04-13' }]
+            },
+            initialAuditLog: []
+        };
+
+        const DB = {
+            db: null,
+            isReady: false,
+            async init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(CONFIG.dbName, CONFIG.dbVersion);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        const oldVersion = event.oldVersion;
+                        
+                        if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'id' });
+                        if (!db.objectStoreNames.contains('tasks')) db.createObjectStore('tasks', { keyPath: 'id' });
+                        if (!db.objectStoreNames.contains('deductions')) db.createObjectStore('deductions', { keyPath: 'id' });
+                        if (!db.objectStoreNames.contains('act_info_versions')) db.createObjectStore('act_info_versions', { keyPath: 'id' });
+                        if (!db.objectStoreNames.contains('contract_versions')) db.createObjectStore('contract_versions', { keyPath: 'id' });
+                        if (!db.objectStoreNames.contains('audit_log')) db.createObjectStore('audit_log', { keyPath: 'id', autoIncrement: true });
+                        
+                        // Миграция с версии 5 на 6: принудительная переустановка цен
+                        if (oldVersion < 6 && db.objectStoreNames.contains('deductions')) {
+                            console.log('Запущена миграция БД с версии', oldVersion, 'на версию 6');
+                            const dedStore = db.transaction('deductions', 'readwrite').objectStore('deductions');
+                            const getAllRequest = dedStore.getAll();
+                            
+                            getAllRequest.onsuccess = () => {
+                                const allDeductions = getAllRequest.result;
+                                console.log('Найдено вычетов для миграции:', allDeductions.length);
+                                
+                                // Сопоставление названий с правильными ценами
+                                const correctPrices = {
+                                    'Имущественный вычет': { fill: 300, check: 310, unit: 'штука' },
+                                    'Социальный вычет': { fill: 230, check: 240, unit: 'штука' },
+                                    'Инвестиционный вычет': { fill: 230, check: 240, unit: 'штука' },
+                                    'ЦБ (учет убытков, сальдирование)': { fill: 200, check: 210, unit: 'штука' },
+                                    'Декларирование доходов, полученных на территории РФ': { fill: 301, check: 311, unit: 'стр.' },
+                                    'Декларирование доходов, полученных за пределами РФ': { fill: 31, check: 41, unit: 'стр.' }
+                                };
+                                
+                                let updatedCount = 0;
+                                allDeductions.forEach(record => {
+                                    const correctPrice = correctPrices[record.name];
+                                    if (correctPrice) {
+                                        // Обновляем цены только если они нулевые или undefined
+                                        if (!record.price_fill || record.price_fill === 0 || record.price_fill === undefined) {
+                                            record.price_fill = correctPrice.fill;
+                                            record.original_price_fill = correctPrice.fill;
+                                            updatedCount++;
+                                            console.log('Обновлена цена за заполнение для', record.name, ':', correctPrice.fill);
+                                        }
+                                        if (!record.price_check || record.price_check === 0 || record.price_check === undefined) {
+                                            record.price_check = correctPrice.check;
+                                            record.original_price_check = correctPrice.check;
+                                            updatedCount++;
+                                            console.log('Обновлена цена за проверку для', record.name, ':', correctPrice.check);
+                                        }
+                                        if (!record.unit || record.unit === '') {
+                                            record.unit = correctPrice.unit;
+                                            record.original_unit = correctPrice.unit;
+                                            updatedCount++;
+                                        }
+                                        
+                                        // Обновляем запись в БД
+                                        dedStore.put(record);
+                                    }
+                                });
+                                
+                                console.log('Всего обновлено полей:', updatedCount);
+                            };
+                        }
+                        
+                        // Миграция задач: добавление поля exclude_from_act
+                        if (oldVersion < 6 && db.objectStoreNames.contains('tasks')) {
+                            const taskStore = db.transaction('tasks', 'readwrite').objectStore('tasks');
+                            const taskCursor = taskStore.openCursor();
+                            taskCursor.onsuccess = (cursorEvent) => {
+                                const cursor = cursorEvent.target.result;
+                                if (cursor) {
+                                    const record = cursor.value;
+                                    if (record.exclude_from_act === undefined) {
+                                        record.exclude_from_act = false;
+                                        cursor.update(record);
+                                    }
+                                    cursor.continue();
+                                }
+                            };
+                        }
+                    };
+                    request.onsuccess = (event) => {
+                        this.db = event.target.result;
+                        this.seedData().then(() => {
+                            this.isReady = true;
+                            App.data.syncPendingToDB();
+                            resolve();
+                        });
+                    };
+                    request.onerror = () => reject(request.error);
+                });
+            },
+            async seedData() {
+                const tx = this.db.transaction(['users', 'deductions', 'act_info_versions', 'contract_versions', 'audit_log'], 'readwrite');
+                const usersStore = tx.objectStore('users');
+                const dedStore = tx.objectStore('deductions');
+                const aiStore = tx.objectStore('act_info_versions');
+                const cvStore = tx.objectStore('contract_versions');
+                const auditStore = tx.objectStore('audit_log');
+
+                const count = await new Promise(r => usersStore.count().onsuccess = e => r(e.target.result));
+                if (count === 0) {
+                    for (const user of CONFIG.initialUsers) {
+                        user.password_hash = await App.auth.hashPassword(CONFIG.initialPasswords[user.login]);
+                        usersStore.add(user);
+                    }
+                    for (const ded of CONFIG.initialDeductions) dedStore.add(ded);
+                    for (const ai of CONFIG.initialActInfoVersions) aiStore.add(ai);
+                    for (const userId in CONFIG.initialContractVersions) {
+                        for (const cv of CONFIG.initialContractVersions[userId]) cvStore.add(cv);
+                    }
+                    for (const log of CONFIG.initialAuditLog) auditStore.add(log);
+                }
+                return new Promise(resolve => tx.oncomplete = resolve);
+            },
+            async getAll(storeName) {
+                return new Promise(resolve => {
+                    const tx = this.db.transaction(storeName, 'readonly');
+                    const request = tx.objectStore(storeName).getAll();
+                    request.onsuccess = () => resolve(request.result);
+                });
+            },
+            async put(storeName, data) {
+                return new Promise(resolve => {
+                    const tx = this.db.transaction(storeName, 'readwrite');
+                    tx.objectStore(storeName).put(data);
+                    tx.oncomplete = () => resolve();
+                });
+            },
+            async delete(storeName, id) {
+                return new Promise(resolve => {
+                    const tx = this.db.transaction(storeName, 'readwrite');
+                    tx.objectStore(storeName).delete(id);
+                    tx.oncomplete = () => resolve();
+                });
+            },
+            async addAuditLog(entry) {
+                try {
+                    if (!DB.isReady || !DB.db) {
+                        console.warn('БД не готова, добавляем в память:', entry);
+                        if (!App.state.auditLog) App.state.auditLog = [];
+                        App.state.auditLog.push({
+                            ...entry,
+                            id: 'audit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                            timestamp: new Date().toISOString(),
+                            user_id: App.state.currentUser?.id || 'system',
+                            user_login: App.state.currentUser?.login || 'system'
+                        });
+                        return;
+                    }
+                    
+                    const auditEntry = {
+                        ...entry,
+                        timestamp: new Date().toISOString(),
+                        user_id: App.state.currentUser?.id || 'system',
+                        user_login: App.state.currentUser?.login || 'system'
+                    };
+                    
+                    await DB.put('audit_log', auditEntry);
+                    if (!App.state.auditLog) App.state.auditLog = [];
+                    App.state.auditLog.push(auditEntry);
+                    console.log('Запись добавлена в журнал аудита:', auditEntry);
+                } catch (error) {
+                    console.error('Ошибка при добавлении в журнал аудита:', error);
+                    if (!App.state.auditLog) App.state.auditLog = [];
+                    App.state.auditLog.push({
+                        ...entry,
+                        id: 'audit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                        timestamp: new Date().toISOString(),
+                        user_id: App.state.currentUser?.id || 'system',
+                        user_login: App.state.currentUser?.login || 'system'
+                    });
+                }
+            }
+        };
+
+        const sessionChannel = new BroadcastChannel('nv-kard-session');
+        
+        App = {
+            state: {
+                currentUser: null,
+                viewedRole: null,
+                tasks: [],
+                users: [],
+                deductions: [],
+                actInfoVersions: [],
+                contractVersions: {},
+                auditLog: [],
+                inactivityTimer: null,
+                deleteTargetId: null,
+                sortColumn: null,
+                sortDirection: 'asc',
+                pendingTaskIds: new Set()
+            },
+
+            auth: {
+                async hashPassword(password) {
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(password + 'nv_kard_static_salt_mvp');
+                    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+                },
+                async login(devLogin = null) {
+                    const loginInput = document.getElementById('login-username').value.trim();
+                    const passInput = document.getElementById('login-password').value;
+                    const targetLogin = devLogin || loginInput;
+                    if (!targetLogin) { document.getElementById('login-error').textContent = 'Неверный логин или пароль'; return; }
+                    if (devLogin) {
+                        const configUser = CONFIG.initialUsers.find(u => u.login === devLogin);
+                        if (configUser) {
+                            App.state.currentUser = { id: configUser.id, login: configUser.login, full_name: configUser.full_name, role: configUser.role };
+                            App.state.viewedRole = configUser.role;
+                            sessionChannel.postMessage({ type: 'LOGIN', user: configUser.login });
+                            document.getElementById('login-screen').classList.add('hidden');
+                            document.getElementById('app-screen').classList.remove('hidden');
+                            await App.ui.initApp();
+                            App.session.startInactivityTimer();
+                            return;
+                        }
+                    }
+                    if (!DB.isReady) { document.getElementById('login-error').textContent = 'Система загружается, подождите...'; return; }
+                    const users = await DB.getAll('users');
+                    const user = users.find(u => u.login === targetLogin && !u.is_archived);
+                    let isValid = false;
+                    if (user) { const hash = await this.hashPassword(passInput); isValid = (user.password_hash === hash); }
+                    if (isValid) {
+                        App.state.currentUser = user;
+                        App.state.viewedRole = user.role;
+                        sessionChannel.postMessage({ type: 'LOGIN', user: user.login });
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('app-screen').classList.remove('hidden');
+                        App.ui.initApp();
+                        App.session.startInactivityTimer();
+                    } else { document.getElementById('login-error').textContent = 'Неверный логин или пароль'; }
+                },
+                logout() {
+                    App.state.currentUser = null;
+                    clearInterval(App.state.inactivityTimer);
+                    document.getElementById('app-screen').classList.add('hidden');
+                    document.getElementById('login-screen').classList.remove('hidden');
+                    document.getElementById('login-username').value = '';
+                    document.getElementById('login-password').value = '';
+                    document.getElementById('login-error').textContent = '';
+                }
+            },
+
+            session: {
+                startInactivityTimer() {
+                    const reset = () => {
+                        clearTimeout(App.state.inactivityTimer);
+                        App.state.inactivityTimer = setTimeout(() => { alert('Сессия завершена из-за неактивности (60 минут).'); App.auth.logout(); }, CONFIG.inactivityTimeout);
+                    };
+                    ['mousemove', 'keydown', 'scroll', 'click', 'focus'].forEach(evt => document.addEventListener(evt, reset, true));
+                    reset();
+                }
+            },
+
+            utils: {
+                addDays(dateStr, days) {
+                    const d = new Date(dateStr);
+                    d.setDate(d.getDate() + days);
+                    return d.toISOString().split('T')[0];
+                },
+                formatDateRu(dateStr) {
+                    if (!dateStr) return '';
+                    const d = new Date(dateStr);
+                    const day = d.getDate();
+                    const months = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+                    const month = months[d.getMonth()];
+                    const year = d.getFullYear();
+                    return `«${day}» ${month} ${year} года`;
+                },
+                formatDateRuShort(dateStr) {
+                    if (!dateStr) return '';
+                    const d = new Date(dateStr);
+                    const day = d.getDate().toString().padStart(2, '0');
+                    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                    const year = d.getFullYear();
+                    return `${day}.${month}.${year}`;
+                },
+                formatDateTime(dt) {
+                    if (!dt) return '';
+                    const d = new Date(dt);
+                    return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth()+1).toString().padStart(2, '0')}.${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                },
+                numberToWords(sum) {
+                    const rub = Math.floor(sum);
+                    const kop = Math.round((sum - rub) * 100);
+                    return `${rub.toLocaleString('ru').replace(/,/g, ' ')}-${kop.toString().padStart(2, '0')} (${this._numToWords(rub)}) рублей ${kop.toString().padStart(2, '0')} копеек`;
+                },
+                _numToWords(n) { return 'сумма прописью'; },
+                formatMoney(sum) {
+                    const rub = Math.floor(sum);
+                    const kop = Math.round((sum - rub) * 100);
+                    return `${rub.toLocaleString('ru').replace(/,/g, ' ')}-${kop.toString().padStart(2, '0')} (${this._numToWords(rub)}) рублей ${kop.toString().padStart(2, '0')} копеек`;
+                },
+                getActInfoForDate(dateStr) {
+                    const versions = App.state.actInfoVersions
+                        .filter(v => v.effective_date <= dateStr && (!v.end_date || v.end_date >= dateStr))
+                        .sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                    return versions[0] || null;
+                },
+                getContractForDate(userId, dateStr) {
+                    const versions = (App.state.contractVersions[userId] || [])
+                        .filter(v => v.effective_date <= dateStr && (!v.end_date || v.end_date >= dateStr))
+                        .sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                    return versions[0] || null;
+                },
+                recalculateEndDates(versions) {
+                    const sorted = [...versions].sort((a, b) => new Date(a.effective_date) - new Date(b.effective_date));
+                    for (let i = 0; i < sorted.length; i++) {
+                        if (i < sorted.length - 1) {
+                            sorted[i].end_date = this.addDays(sorted[i + 1].effective_date, -1);
+                        } else {
+                            sorted[i].end_date = null;
+                        }
+                    }
+                    return sorted;
+                },
+                getDeductionForDate(name, dateStr) {
+                    const versions = App.state.deductions
+                        .filter(d => d.name === name && d.effective_date <= dateStr && (!d.end_date || d.end_date >= dateStr))
+                        .sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                    return versions[0] || null;
+                },
+                getPriceForStatus(deduction, status) {
+                    if (!deduction) return 0;
+                    if (status === 'проверен') return deduction.price_check || deduction.price_fill || 0;
+                    return deduction.price_fill || 0;
+                }
+            },
+
+            logic: {
+                async addTaskRow() {
+                    const id = 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    const today = new Date().toISOString().split('T')[0];
+                    const newTask = {
+                        id: id, user_id: App.state.currentUser.id, certificate: '', client_fio: '', partner: '', tariff: '',
+                        status: 'в работе', fill_date: today, tax_period: new Date().getFullYear(), nd_count: 1, comments: '',
+                        deduction_type: null, deduction_value: 0, applied_price: 0, customer_snapshot_id: 'customer',
+                        contract_date_snapshot: today, last_modified: Date.now(), exclude_from_act: false
+                    };
+                    App.state.tasks.push(newTask);
+                    if (DB.isReady) { try { await DB.put('tasks', newTask); } catch (e) { App.state.pendingTaskIds.add(id); } }
+                    else { App.state.pendingTaskIds.add(id); }
+                    App.ui.renderCurrentWork();
+                    App.ui.setSaveStatus('saving');
+                    setTimeout(() => App.ui.setSaveStatus('saved'), 500);
+                },
+                async updateTaskField(id, field, value) {
+                    const task = App.state.tasks.find(t => t.id === id);
+                    if (!task) return;
+                    task[field] = value;
+                    task.last_modified = Date.now();
+                    if (field === 'deduction_value') {
+                        const val = parseInt(value) || 0;
+                        task.deduction_value = val;
+                        if (val > 0 && !task.deduction_type) task.deduction_type = null;
+                        else if (val === 0) { task.deduction_type = null; task.applied_price = 0; }
+                    }
+                    if (field === 'deduction_type') {
+                        if (value && task.deduction_value > 0) {
+                            task.deduction_type = value;
+                            const priceRecord = App.utils.getDeductionForDate(value, task.fill_date);
+                            task.applied_price = App.utils.getPriceForStatus(priceRecord, task.status);
+                        } else { task.deduction_type = null; task.applied_price = 0; }
+                    }
+                    if (field === 'status') {
+                        if (task.deduction_type && task.deduction_value > 0) {
+                            const priceRecord = App.utils.getDeductionForDate(task.deduction_type, task.fill_date);
+                            task.applied_price = App.utils.getPriceForStatus(priceRecord, task.status);
+                        }
+                    }
+                    if (field === 'fill_date') {
+                        if (new Date(value) > new Date()) { alert('Нельзя выбрать будущую дату'); task[field] = new Date().toISOString().split('T')[0]; }
+                        if (task.deduction_type && task.deduction_value > 0) {
+                            const priceRecord = App.utils.getDeductionForDate(task.deduction_type, task.fill_date);
+                            task.applied_price = App.utils.getPriceForStatus(priceRecord, task.status);
+                        }
+                    }
+                    if (field === 'exclude_from_act') {
+                        task.exclude_from_act = (value === true || value === 'true');
+                    }
+                    if (DB.isReady) { try { await DB.put('tasks', task); App.state.pendingTaskIds.delete(id); } catch (e) { App.state.pendingTaskIds.add(id); } }
+                    else { App.state.pendingTaskIds.add(id); }
+                    App.ui.renderCurrentWork();
+                    App.ui.setSaveStatus('saving');
+                },
+                async deleteTask(id) {
+                    App.state.tasks = App.state.tasks.filter(t => t.id !== id);
+                    App.state.pendingTaskIds.delete(id);
+                    if (DB.isReady) { try { await DB.delete('tasks', id); } catch (e) {} }
+                    App.ui.closeModal('modal-delete');
+                    App.ui.renderCurrentWork();
+                }
+            },
+
+            ui: {
+                async initApp() {
+                    if (DB.isReady) {
+                        App.state.users = await DB.getAll('users');
+                        App.state.deductions = await DB.getAll('deductions');
+                        App.state.actInfoVersions = await DB.getAll('act_info_versions');
+                        const allContracts = await DB.getAll('contract_versions');
+                        App.state.contractVersions = {};
+                        allContracts.forEach(cv => {
+                            if (!App.state.contractVersions[cv.user_id]) App.state.contractVersions[cv.user_id] = [];
+                            App.state.contractVersions[cv.user_id].push(cv);
+                        });
+                        App.state.auditLog = await DB.getAll('audit_log');
+                        App.state.tasks = await DB.getAll('tasks');
+                    } else {
+                        App.state.users = CONFIG.initialUsers;
+                        App.state.deductions = JSON.parse(JSON.stringify(CONFIG.initialDeductions));
+                        App.state.actInfoVersions = JSON.parse(JSON.stringify(CONFIG.initialActInfoVersions));
+                        App.state.contractVersions = JSON.parse(JSON.stringify(CONFIG.initialContractVersions));
+                        App.state.auditLog = JSON.parse(JSON.stringify(CONFIG.initialAuditLog));
+                        if (!App.state.tasks || App.state.tasks.length === 0) App.state.tasks = [];
+                    }
+                    const badge = document.getElementById('user-role-badge');
+                    badge.textContent = App.state.viewedRole === 'superadmin' ? 'Супер-администратор' : App.state.viewedRole === 'admin' ? 'Администратор' : 'Сотрудник';
+                    badge.className = `role-badge role-${App.state.viewedRole}`;
+                    if (App.state.currentUser.role === 'superadmin') document.getElementById('role-switcher').classList.remove('hidden');
+                    if (App.state.viewedRole !== 'employee') { document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden')); this.populateUserFilter(); }
+                    else { document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden')); }
+                    this.populateActExecutorFilter();
+                    const now = new Date();
+                    document.getElementById('act-month').value = now.getMonth() + 1;
+                    document.getElementById('act-year').value = now.getFullYear();
+                    this.renderCurrentWork();
+                    this.initSortHandlers();
+                    this.restoreAccordionState();
+                    setInterval(() => this.setSaveStatus('saved'), CONFIG.autoSaveInterval);
+                },
+                populateActExecutorFilter() {
+                    const select = document.getElementById('act-filter-executor');
+                    select.innerHTML = '<option value="all">Все исполнители</option>';
+                    if (App.state.viewedRole === 'employee') {
+                        const currentUser = App.state.users.find(u => u.id === App.state.currentUser.id);
+                        if (currentUser) { select.innerHTML = `<option value="${currentUser.id}" selected>${currentUser.full_name}</option>`; select.disabled = true; }
+                    } else {
+                        select.disabled = false;
+                        App.state.users.filter(u => u.role === 'employee' && !u.is_archived).forEach(u => { select.innerHTML += `<option value="${u.id}">${u.full_name}</option>`; });
+                    }
+                },
+                initSortHandlers() {
+                    document.querySelectorAll('#cw-table th.sortable').forEach(header => {
+                        header.addEventListener('click', () => {
+                            const sortKey = header.getAttribute('data-sort');
+                            if (App.state.sortColumn === sortKey) App.state.sortDirection = App.state.sortDirection === 'asc' ? 'desc' : 'asc';
+                            else { App.state.sortColumn = sortKey; App.state.sortDirection = 'asc'; }
+                            this.renderCurrentWork();
+                        });
+                    });
+                },
+                switchRoleView(role) { App.state.viewedRole = role; App.ui.initApp(); },
+                showTab(tabId) {
+                    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+                    document.getElementById(`tab-${tabId}`).classList.add('active');
+                    event.target.classList.add('active');
+                    if (tabId === 'acts') this.renderActs();
+                    if (tabId === 'settings') this.renderSettings();
+                },
+                toggleTheme() {
+                    const current = document.documentElement.getAttribute('data-theme');
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', next);
+                    localStorage.setItem('nvkard_theme', next);
+                },
+                setSaveStatus(status) {
+                    const el = document.getElementById('save-status');
+                    const pendingCount = App.state.pendingTaskIds.size;
+                    if (status === 'saving') el.innerHTML = '<span>⏳</span> Сохранение...';
+                    else if (status === 'saved') {
+                        if (pendingCount > 0) { el.innerHTML = `<span>⚠️</span> В памяти (${pendingCount})`; el.title = `${pendingCount} задач в памяти`; }
+                        else { el.innerHTML = '<span>✓</span> Сохранено'; el.title = 'Автосохранение: каждую минуту'; }
+                    } else { el.innerHTML = '<span>⚠️</span> Ошибка'; }
+                },
+                populateUserFilter() {
+                    const select = document.getElementById('cw-filter-user');
+                    select.innerHTML = '<option value="all">Все сотрудники</option>';
+                    App.state.users.filter(u => u.role === 'employee' && !u.is_archived).forEach(u => { select.innerHTML += `<option value="${u.id}">${u.full_name}</option>`; });
+                },
+                filterTasksByRole(tasks) {
+                    if (App.state.viewedRole === 'employee' && App.state.currentUser.role === 'employee') return tasks.filter(t => t.user_id === App.state.currentUser.id);
+                    return tasks;
+                },
+                sortTasks(tasks) {
+                    if (!App.state.sortColumn) return tasks;
+                    const sorted = [...tasks];
+                    const col = App.state.sortColumn;
+                    const dir = App.state.sortDirection === 'asc' ? 1 : -1;
+                    sorted.sort((a, b) => {
+                        let valA, valB;
+                        switch(col) {
+                            case 'index': return 0;
+                            case 'certificate': valA = (a.certificate || '').toLowerCase(); valB = (b.certificate || '').toLowerCase(); break;
+                            case 'client_fio': valA = (a.client_fio || '').toLowerCase(); valB = (b.client_fio || '').toLowerCase(); break;
+                            case 'partner': valA = (a.partner || '').toLowerCase(); valB = (b.partner || '').toLowerCase(); break;
+                            case 'tariff': valA = (a.tariff || '').toLowerCase(); valB = (b.tariff || '').toLowerCase(); break;
+                            case 'status': valA = (a.status || '').toLowerCase(); valB = (b.status || '').toLowerCase(); break;
+                            case 'fill_date': valA = new Date(a.fill_date || '1970-01-01'); valB = new Date(b.fill_date || '1970-01-01'); break;
+                            case 'tax_period': valA = parseInt(a.tax_period) || 0; valB = parseInt(b.tax_period) || 0; break;
+                            case 'nd_count': valA = parseInt(a.nd_count) || 0; valB = parseInt(b.nd_count) || 0; break;
+                            case 'comments': valA = (a.comments || '').toLowerCase(); valB = (b.comments || '').toLowerCase(); break;
+                            case 'deduction_value': valA = parseInt(a.deduction_value) || 0; valB = parseInt(b.deduction_value) || 0; break;
+                            case 'executor': const userA = App.state.users.find(u => u.id === a.user_id); const userB = App.state.users.find(u => u.id === b.user_id); valA = (userA?.full_name || '').toLowerCase(); valB = (userB?.full_name || '').toLowerCase(); break;
+                            default: return 0;
+                        }
+                        if (valA < valB) return -1 * dir;
+                        if (valA > valB) return 1 * dir;
+                        return 0;
+                    });
+                    return sorted;
+                },
+                updateSortIndicators() {
+                    document.querySelectorAll('#cw-table th').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+                    if (App.state.sortColumn) {
+                        const activeHeader = document.querySelector(`#cw-table th[data-sort="${App.state.sortColumn}"]`);
+                        if (activeHeader) activeHeader.classList.add(App.state.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                    }
+                },
+                renderCurrentWork() {
+                    const tbody = document.getElementById('cw-tbody');
+                    tbody.innerHTML = '';
+                    let filtered = this.filterTasksByRole(App.state.tasks);
+                    const filterUser = document.getElementById('cw-filter-user').value;
+                    const search = document.getElementById('cw-search').value.toLowerCase();
+                    if (filterUser !== 'all') filtered = filtered.filter(t => t.user_id === filterUser);
+                    if (search) filtered = filtered.filter(t => (t.certificate || '').toLowerCase().includes(search) || (t.client_fio || '').toLowerCase().includes(search));
+                    filtered = this.sortTasks(filtered);
+                    filtered.forEach((task, index) => {
+                        const tr = document.createElement('tr');
+                        const deductionValue = task.deduction_value || '';
+                        const deductionType = task.deduction_type || '';
+                        const showTypeSelect = deductionValue > 0;
+                        let deductionHtml = `<div class="deduction-cell"><input type="number" class="deduction-value-input" min="0" max="100" value="${deductionValue}" placeholder="0" onchange="App.logic.updateTaskField('${task.id}', 'deduction_value', this.value)">`;
+                        if (showTypeSelect) {
+                            deductionHtml += `<select class="deduction-type-select" onchange="App.logic.updateTaskField('${task.id}', 'deduction_type', this.value)"><option value="">-- Выберите вид --</option>${CONFIG.initialDeductions.map(ded => `<option value="${ded.name}" ${deductionType === ded.name ? 'selected' : ''}>${ded.name}</option>`).join('')}</select>`;
+                        }
+                        if (deductionType && deductionValue > 0) deductionHtml += `<div class="deduction-tooltip">${deductionType}: ${deductionValue}</div>`;
+                        deductionHtml += `</div>`;
+                        const isEditable = App.state.viewedRole !== 'employee' || task.user_id === App.state.currentUser.id;
+                        const executorName = App.state.users.find(u => u.id === task.user_id)?.full_name || 'Неизвестно';
+                        const executorSelect = App.state.viewedRole !== 'employee' ? `<select onchange="App.logic.updateTaskField('${task.id}', 'user_id', this.value)">${App.state.users.filter(u => !u.is_archived).map(u => `<option value="${u.id}" ${u.id === task.user_id ? 'selected' : ''}>${u.full_name}</option>`).join('')}</select>` : `<span>${executorName}</span>`;
+                        const excludeChecked = task.exclude_from_act ? 'checked' : '';
+                        tr.innerHTML = `<td>${index + 1}</td><td><input type="text" value="${task.certificate || ''}" ${!isEditable ? 'readonly' : ''} onchange="App.logic.updateTaskField('${task.id}', 'certificate', this.value)"></td><td><input type="text" value="${task.client_fio || ''}" ${!isEditable ? 'readonly' : ''} onchange="App.logic.updateTaskField('${task.id}', 'client_fio', this.value)"></td><td><input type="text" value="${task.partner || ''}" ${!isEditable ? 'readonly' : ''} onchange="App.logic.updateTaskField('${task.id}', 'partner', this.value)"></td><td><input type="text" value="${task.tariff || ''}" ${!isEditable ? 'readonly' : ''} onchange="App.logic.updateTaskField('${task.id}', 'tariff', this.value)"></td><td><select ${!isEditable ? 'disabled' : ''} onchange="App.logic.updateTaskField('${task.id}', 'status', this.value)"><option value="в работе" ${task.status === 'в работе' ? 'selected' : ''}>в работе</option><option value="заполнен" ${task.status === 'заполнен' ? 'selected' : ''}>заполнен</option><option value="проверен" ${task.status === 'проверен' ? 'selected' : ''}>проверен</option></select></td><td><input type="date" value="${task.fill_date || ''}" ${!isEditable ? 'readonly' : ''} onchange="App.logic.updateTaskField('${task.id}', 'fill_date', this.value)"></td><td><select ${!isEditable ? 'disabled' : ''} onchange="App.logic.updateTaskField('${task.id}', 'tax_period', this.value)">${[2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029].map(y => `<option value="${y}" ${task.tax_period == y ? 'selected' : ''}>${y}</option>`).join('')}</select></td><td><select ${!isEditable ? 'disabled' : ''} onchange="App.logic.updateTaskField('${task.id}', 'nd_count', this.value)">${[1, 2, 3, 4].map(n => `<option value="${n}" ${task.nd_count == n ? 'selected' : ''}>${n}</option>`).join('')}</select></td><td><input type="text" value="${task.comments || ''}" ${!isEditable ? 'readonly' : ''} placeholder="Необязательно" onchange="App.logic.updateTaskField('${task.id}', 'comments', this.value)"></td><td>${deductionHtml}</td><td>${executorSelect}</td><td><input type="checkbox" class="exclude-checkbox" ${excludeChecked} onchange="App.logic.updateTaskField('${task.id}', 'exclude_from_act', this.checked)" title="Исключить из актов"></td><td>${isEditable ? `<button class="btn btn-sm btn-danger" onclick="App.ui.confirmDelete('${task.id}')">🗑</button>` : ''}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                    this.updateSortIndicators();
+                },
+                confirmDelete(id) { App.state.deleteTargetId = id; document.getElementById('modal-delete').classList.add('active'); document.getElementById('confirm-delete-btn').onclick = () => App.logic.deleteTask(id); },
+                closeModal(modalId) { document.getElementById(modalId).classList.remove('active'); },
+                renderActs() {
+                    const month = parseInt(document.getElementById('act-month').value);
+                    const year = parseInt(document.getElementById('act-year').value);
+                    const isGrouped = document.getElementById('act-grouped').checked;
+                    const executorFilter = document.getElementById('act-filter-executor').value;
+                    const tbody = document.getElementById('act-tbody');
+                    const tfoot = document.getElementById('act-tfoot');
+                    tbody.innerHTML = '';
+                    tfoot.innerHTML = '';
+                    let tasks = this.filterTasksByRole(App.state.tasks);
+                    tasks = tasks.filter(t => {
+                        const d = new Date(t.fill_date);
+                        const matchDate = d.getMonth() + 1 === month && d.getFullYear() === year;
+                        let matchExecutor = true;
+                        if (executorFilter !== 'all') matchExecutor = t.user_id === executorFilter;
+                        const matchStatus = t.status === 'заполнен' || t.status === 'проверен';
+                        const notExcluded = !t.exclude_from_act;
+                        return matchDate && matchExecutor && matchStatus && notExcluded && t.deduction_type && t.deduction_value > 0;
+                    });
+                    let totalSum = 0;
+                    let rowsToRender = [];
+                    if (isGrouped) {
+                        const grouped = {};
+                        tasks.forEach(t => {
+                            if (!grouped[t.deduction_type]) grouped[t.deduction_type] = { qty: 0, sum: 0, price: t.applied_price, desc: 'Группированно' };
+                            grouped[t.deduction_type].qty += t.deduction_value;
+                            grouped[t.deduction_type].sum += (t.applied_price * t.deduction_value);
+                        });
+                        for (const [type, data] of Object.entries(grouped)) {
+                            const deduction = App.state.deductions.find(d => d.name === type);
+                            const unit = deduction?.unit || 'штука';
+                            rowsToRender.push({ type: 'Заполнение деклараций', deduction: type, desc: data.desc, price: data.price, unit: unit, qty: data.qty, sum: data.sum });
+                            totalSum += data.sum;
+                        }
+                    } else {
+                        rowsToRender = tasks.map(t => {
+                            const deduction = App.state.deductions.find(d => d.name === t.deduction_type);
+                            const unit = deduction?.unit || 'штука';
+                            const sum = t.applied_price * t.deduction_value;
+                            totalSum += sum;
+                            return { type: 'Заполнение деклараций', deduction: t.deduction_type, desc: `${t.certificate || ''} ${t.client_fio || ''}`, price: t.applied_price, unit: unit, qty: t.deduction_value, sum: sum };
+                        });
+                    }
+                    rowsToRender.forEach(row => { tbody.innerHTML += `<tr><td>${row.type}</td><td>${row.deduction}</td><td>${row.desc}</td><td>${row.price}</td><td>${row.unit}</td><td>${row.qty}</td><td>${row.sum.toFixed(2)}</td></tr>`; });
+                    tfoot.innerHTML = `<tr><td colspan="6" style="text-align:right; padding-right:20px;">ИТОГО:</td><td>${totalSum.toFixed(2)}</td></tr><tr><td colspan="7" style="text-align:center; font-weight:400; font-size:12px; padding:10px;">Сумма оказанных услуг: ${App.utils.numberToWords(totalSum)}</td></tr>`;
+                },
+                
+                toggleBlock(blockId) {
+                    const block = document.getElementById(blockId);
+                    block.classList.toggle('expanded');
+                    this.saveAccordionState();
+                },
+                expandAllBlocks() {
+                    document.querySelectorAll('.settings-block').forEach(block => block.classList.add('expanded'));
+                    this.saveAccordionState();
+                },
+                collapseAllBlocks() {
+                    document.querySelectorAll('.settings-block').forEach(block => block.classList.remove('expanded'));
+                    this.saveAccordionState();
+                },
+                expandAllGroups() {
+                    document.querySelectorAll('.version-group').forEach(group => group.classList.add('expanded'));
+                    localStorage.setItem('nvkard_groups_expanded', 'all');
+                },
+                collapseAllGroups() {
+                    document.querySelectorAll('.version-group').forEach(group => group.classList.remove('expanded'));
+                    localStorage.setItem('nvkard_groups_expanded', 'none');
+                },
+                expandGroup(blockId) {
+                    const block = document.getElementById(blockId);
+                    block.querySelectorAll('.version-group').forEach(group => group.classList.add('expanded'));
+                },
+                collapseGroup(blockId) {
+                    const block = document.getElementById(blockId);
+                    block.querySelectorAll('.version-group').forEach(group => group.classList.remove('expanded'));
+                },
+                toggleGroup(groupId) {
+                    const group = document.getElementById(groupId);
+                    group.classList.toggle('expanded');
+                },
+                saveAccordionState() {
+                    const state = {};
+                    document.querySelectorAll('.settings-block').forEach(block => {
+                        state[block.id] = block.classList.contains('expanded');
+                    });
+                    localStorage.setItem('nvkard_accordion_state', JSON.stringify(state));
+                },
+                restoreAccordionState() {
+                    const saved = localStorage.getItem('nvkard_accordion_state');
+                    if (saved) {
+                        try {
+                            const state = JSON.parse(saved);
+                            for (const [blockId, isExpanded] of Object.entries(state)) {
+                                const block = document.getElementById(blockId);
+                                if (block) {
+                                    if (isExpanded) block.classList.add('expanded');
+                                    else block.classList.remove('expanded');
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Не удалось восстановить состояние аккордеона:', e);
+                        }
+                    }
+                    const groupsState = localStorage.getItem('nvkard_groups_expanded');
+                    if (groupsState === 'all') {
+                        this.expandAllGroups();
+                    } else if (groupsState === 'none') {
+                        this.collapseAllGroups();
+                    }
+                },
+                
+                renderSettings() {
+                    this.renderBlockStats();
+                    this.renderEmployeesList();
+                    this.renderDeductionsList();
+                    this.renderActInfoList();
+                    this.renderContractsList();
+                    this.renderAuditLog();
+                },
+                
+                renderBlockStats() {
+                    const totalEmployees = App.state.users.filter(u => u.role === 'employee').length;
+                    const activeEmployees = App.state.users.filter(u => u.role === 'employee' && !u.is_archived).length;
+                    const archivedEmployees = totalEmployees - activeEmployees;
+                    document.getElementById('block-1-stats').innerHTML = `
+                        <span class="stat-badge accent">${activeEmployees} активных</span>
+                        ${archivedEmployees > 0 ? `<span class="stat-badge">${archivedEmployees} в архиве</span>` : ''}
+                    `;
+                    
+                    const uniqueDeductions = [...new Set(App.state.deductions.map(d => d.name))];
+                    const totalVersions = App.state.deductions.length;
+                    const maxPrice = Math.max(...App.state.deductions.map(d => d.price_fill || 0));
+                    const modifiedCount = App.state.deductions.filter(d => d.price_fill !== d.original_price_fill || d.unit !== d.original_unit).length;
+                    document.getElementById('block-2-stats').innerHTML = `
+                        <span class="stat-badge accent">${uniqueDeductions.length} видов</span>
+                        <span class="stat-badge">${totalVersions} версий</span>
+                        <span class="stat-badge">макс. ${maxPrice} ₽</span>
+                        ${modifiedCount > 0 ? `<span class="stat-badge" style="background-color: var(--warning); color: white;">${modifiedCount} изменено</span>` : ''}
+                    `;
+                    
+                    const aiVersions = App.state.actInfoVersions.length;
+                    const currentAi = App.state.actInfoVersions.length > 0 ? 
+                        [...App.state.actInfoVersions].sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date))[0] : null;
+                    const aiModifiedCount = App.state.actInfoVersions.filter(v => 
+                        v.full_name !== v.original_full_name || v.poa !== v.original_poa || v.short_name !== v.original_short_name
+                    ).length;
+                    document.getElementById('block-3-stats').innerHTML = `
+                        <span class="stat-badge accent">${aiVersions} версий</span>
+                        ${currentAi ? `<span class="stat-badge">с ${App.utils.formatDateRuShort(currentAi.effective_date)}</span>` : ''}
+                        ${aiModifiedCount > 0 ? `<span class="stat-badge" style="background-color: var(--warning); color: white;">${aiModifiedCount} изменено</span>` : ''}
+                    `;
+                    
+                    const employeesWithContracts = Object.keys(App.state.contractVersions).filter(userId => 
+                        App.state.contractVersions[userId] && App.state.contractVersions[userId].length > 0
+                    ).length;
+                    const totalContractVersions = Object.values(App.state.contractVersions).reduce((sum, versions) => sum + versions.length, 0);
+                    let contractModifiedCount = 0;
+                    Object.values(App.state.contractVersions).forEach(versions => {
+                        contractModifiedCount += versions.filter(v => v.contract_date !== v.original_contract_date).length;
+                    });
+                    document.getElementById('block-4-stats').innerHTML = `
+                        <span class="stat-badge accent">${employeesWithContracts} сотрудников</span>
+                        <span class="stat-badge">${totalContractVersions} версий</span>
+                        ${contractModifiedCount > 0 ? `<span class="stat-badge" style="background-color: var(--warning); color: white;">${contractModifiedCount} изменено</span>` : ''}
+                    `;
+                    
+                    const auditCount = App.state.auditLog.length;
+                    const todayLogs = App.state.auditLog.filter(log => {
+                        const logDate = new Date(log.timestamp).toDateString();
+                        const today = new Date().toDateString();
+                        return logDate === today;
+                    }).length;
+                    document.getElementById('block-5-stats').innerHTML = `
+                        <span class="stat-badge accent">${auditCount} записей</span>
+                        ${todayLogs > 0 ? `<span class="stat-badge">сегодня: ${todayLogs}</span>` : ''}
+                    `;
+                },
+                
+                renderEmployeesList() {
+                    const empList = document.getElementById('settings-employees-list');
+                    empList.innerHTML = '';
+                    App.state.users.filter(u => u.role === 'employee').forEach(u => {
+                        empList.innerHTML += `<div class="settings-row"><div><div style="font-weight:500">${u.full_name}</div><div style="font-size:12px; color:var(--text-secondary)">Логин: ${u.login} <span style="cursor:pointer; margin-left:8px;" onclick="navigator.clipboard.writeText('${u.login}')" title="Копировать"></span></div></div><div style="display:flex; gap:8px; align-items:center;"><span class="password-field" id="pwd-${u.id}">••••••••</span><button class="btn btn-sm btn-secondary" onclick="App.settings.revealPassword('${u.id}', '${CONFIG.initialPasswords[u.login] || 'сменен'}')">Показать</button><button class="btn btn-sm ${u.is_archived ? 'btn-primary' : 'btn-secondary'}" onclick="App.settings.toggleArchive('${u.id}')">${u.is_archived ? 'Восстановить' : 'В архив'}</button></div></div>`;
+                    });
+                },
+                renderDeductionsList() {
+                    const dedList = document.getElementById('settings-deductions-list');
+                    dedList.innerHTML = '';
+                    const dedGroups = {};
+                    App.state.deductions.forEach(d => {
+                        if (!dedGroups[d.name]) dedGroups[d.name] = [];
+                        dedGroups[d.name].push(d);
+                    });
+                    
+                    for (const [name, versions] of Object.entries(dedGroups)) {
+                        const sorted = [...versions].sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                        const current = sorted[0];
+                        const groupId = 'ded-group-' + name.replace(/\s+/g, '-');
+                        
+                        let versionsHtml = '';
+                        sorted.forEach((v, idx) => {
+                            const isCurrent = idx === 0;
+                            const endDateStr = v.end_date ? `по ${App.utils.formatDateRuShort(v.end_date)}` : 'по настоящее время';
+                            const vIsModified = v.price_fill !== v.original_price_fill || v.unit !== v.original_unit;
+                            versionsHtml += `<div class="version-card ${isCurrent ? 'active' : ''} ${vIsModified ? 'modified' : ''}" style="margin-bottom: 8px;">
+                                <div class="version-card-header">
+                                    <div class="version-card-title">${App.utils.formatDateRuShort(v.effective_date)} - ${endDateStr}${vIsModified ? '<span class="modification-badge">✏️ Изменено</span>' : ''}</div>
+                                    ${isCurrent ? '<span class="badge-current">Действует</span>' : '<span class="badge-archived">Архивная</span>'}
+                                </div>
+                                <div class="version-card-body">
+                                    <strong>Цена за заполнение:</strong> ${v.price_fill || 0} руб. за ${v.unit || 'штука'}<br>
+                                    <strong>Цена за проверку:</strong> ${v.price_check || 0} руб. за ${v.unit || 'штука'}
+                                    ${vIsModified ? '<br><strong style="color: var(--warning);">Изменено задним числом</strong>' : ''}
+                                </div>
+                                <div class="version-card-actions">
+                                    <button class="btn btn-sm btn-secondary" onclick="App.settings.showEditDeductionModal('${v.id}')">✏️ Редактировать</button>
+                                </div>
+                            </div>`;
+                        });
+                        
+                        dedList.innerHTML += `<div class="version-group" id="${groupId}">
+                            <div class="version-group-header" onclick="App.ui.toggleGroup('${groupId}')">
+                                <div class="version-group-header-left">
+                                    <span class="version-group-icon">▶</span>
+                                    <span class="version-group-title">${name}</span>
+                                    <span class="version-group-summary">| ${versions.length} версий | Заполнение: ${current.price_fill || 0} ₽ | Проверка: ${current.price_check || 0} ₽</span>
+                                </div>
+                            </div>
+                            <div class="version-group-body">
+                                ${versionsHtml}
+                                <button class="btn btn-sm btn-primary" style="margin-top: 8px;" onclick="App.settings.showAddDeductionModal('${name}')">+ Добавить версию</button>
+                            </div>
+                        </div>`;
+                    }
+                },
+                renderActInfoList() {
+                    const list = document.getElementById('settings-act-info-list');
+                    list.innerHTML = '';
+                    const sorted = [...App.state.actInfoVersions].sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                    sorted.forEach((v, idx) => {
+                        const isCurrent = idx === 0;
+                        const endDateStr = v.end_date ? `по ${App.utils.formatDateRuShort(v.end_date)}` : 'по настоящее время';
+                        const isModified = v.full_name !== v.original_full_name || v.poa !== v.original_poa || v.short_name !== v.original_short_name;
+                        list.innerHTML += `<div class="version-card ${isCurrent ? 'active' : ''} ${isModified ? 'modified' : ''}">
+                            <div class="version-card-header">
+                                <div class="version-card-title">${App.utils.formatDateRuShort(v.effective_date)} - ${endDateStr}${isModified ? '<span class="modification-badge">✏️ Изменено</span>' : ''}</div>
+                                ${isCurrent ? '<span class="badge-current">Действует сейчас</span>' : `<span class="badge-archived">Архивная</span>`}
+                            </div>
+                            <div class="version-card-body">
+                                <strong>ФИО:</strong> ${v.full_name}<br>
+                                <strong>Доверенность:</strong> ${v.poa}<br>
+                                <strong>Краткое ФИО:</strong> ${v.short_name}
+                                ${isModified ? '<br><strong style="color: var(--warning);">Изменено задним числом</strong>' : ''}
+                            </div>
+                            <div class="version-card-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="App.settings.showEditActInfoModal('${v.id}')">✏️ Редактировать</button>
+                            </div>
+                        </div>`;
+                    });
+                },
+                renderContractsList() {
+                    const list = document.getElementById('settings-contracts-list');
+                    list.innerHTML = '';
+                    const employees = App.state.users.filter(u => u.role === 'employee' && !u.is_archived);
+                    employees.forEach(emp => {
+                        const versions = (App.state.contractVersions[emp.id] || []).sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                        const current = versions[0];
+                        const groupId = 'contract-group-' + emp.id;
+                        let versionsHtml = '';
+                        versions.forEach((v, idx) => {
+                            const isCurrent = idx === 0;
+                            const endDateStr = v.end_date ? `по ${App.utils.formatDateRuShort(v.end_date)}` : 'по настоящее время';
+                            const isModified = v.contract_date !== v.original_contract_date;
+                            versionsHtml += `<div class="version-card ${isCurrent ? 'active' : ''} ${isModified ? 'modified' : ''}" style="margin-bottom: 8px;">
+                                <div class="version-card-header">
+                                    <div class="version-card-title">Дата договора: ${App.utils.formatDateRuShort(v.contract_date)} | ${App.utils.formatDateRuShort(v.effective_date)} - ${endDateStr}${isModified ? '<span class="modification-badge">✏️ Изменено</span>' : ''}</div>
+                                    ${isCurrent ? '<span class="badge-current">Действует</span>' : '<span class="badge-archived">Архивная</span>'}
+                                </div>
+                                <div class="version-card-body">
+                                    <strong>Период действия:</strong> с ${App.utils.formatDateRuShort(v.effective_date)} ${endDateStr}
+                                    ${isModified ? '<br><strong style="color: var(--warning);">Изменено задним числом</strong>' : ''}
+                                </div>
+                                <div class="version-card-actions">
+                                    <button class="btn btn-sm btn-secondary" onclick="App.settings.showEditContractModal('${emp.id}', '${v.id}')">✏️ Редактировать</button>
+                                </div>
+                            </div>`;
+                        });
+                        list.innerHTML += `<div class="version-group" id="${groupId}">
+                            <div class="version-group-header" onclick="App.ui.toggleGroup('${groupId}')">
+                                <div class="version-group-header-left">
+                                    <span class="version-group-icon">▶</span>
+                                    <span class="version-group-title">${emp.full_name}</span>
+                                    <span class="version-group-summary">| ${versions.length} версий | Текущая: ${current ? App.utils.formatDateRuShort(current.contract_date) : 'не указана'}</span>
+                                </div>
+                            </div>
+                            <div class="version-group-body">
+                                ${versionsHtml || '<div style="color: var(--text-secondary); font-size: 13px;">Нет версий договора</div>'}
+                                <button class="btn btn-sm btn-primary" style="margin-top: 8px;" onclick="App.settings.showAddContractModal('${emp.id}')">+ Добавить версию договора</button>
+                            </div>
+                        </div>`;
+                    });
+                },
+                renderAuditLog() {
+                    const list = document.getElementById('audit-log-list');
+                    list.innerHTML = '';
+                    if (!App.state.auditLog || App.state.auditLog.length === 0) {
+                        list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">Журнал аудита пуст. Изменения будут отображаться здесь.</div>';
+                        return;
+                    }
+                    const sortedLogs = [...App.state.auditLog].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    sortedLogs.forEach(log => {
+                        const user = App.state.users.find(u => u.id === log.user_id) || { full_name: log.user_login };
+                        const changeDetails = Object.entries(log.changes).map(([key, value]) => {
+                            return `<div class="audit-log-change"><strong>${key}:</strong><br>Было: ${value.old}<br>Стало: ${value.new}</div>`;
+                        }).join('');
+                        list.innerHTML += `
+                            <div class="audit-log-entry">
+                                <div class="audit-log-header">
+                                    <span class="audit-log-user">${user.full_name} (${log.user_login})</span>
+                                    <span class="audit-log-date">${App.utils.formatDateTime(log.timestamp)}</span>
+                                </div>
+                                <div class="audit-log-details">
+                                    <strong>Тип:</strong> ${log.type}<br>
+                                    <strong>Объект:</strong> ${log.objectName || log.objectId}<br>
+                                    ${log.isArchival ? '<span style="color: var(--warning);"><strong>⚠️ Изменение архивной версии</strong></span><br>' : ''}
+                                    ${changeDetails}
+                                </div>
+                                ${log.reason ? `<div class="audit-log-reason"><strong>Причина изменения:</strong><br>${log.reason}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                }
+            },
+
+            settings: {
+                revealPassword(userId, pwd) { const el = document.getElementById(`pwd-${userId}`); el.textContent = pwd; setTimeout(() => { el.textContent = '••••••••'; }, 10000); },
+                async toggleArchive(userId) { const user = App.state.users.find(u => u.id === userId); user.is_archived = !user.is_archived; if (DB.isReady) await DB.put('users', user); App.ui.renderSettings(); },
+                
+                showAddEmployeeModal() {
+                    document.getElementById('new-employee-name').value = '';
+                    document.getElementById('new-employee-login').value = '';
+                    document.getElementById('new-employee-password').value = '';
+                    document.getElementById('new-employee-role').value = 'employee';
+                    document.getElementById('modal-add-employee').classList.add('active');
+                },
+                async addEmployee() {
+                    const name = document.getElementById('new-employee-name').value.trim();
+                    const login = document.getElementById('new-employee-login').value.trim();
+                    const password = document.getElementById('new-employee-password').value;
+                    const role = document.getElementById('new-employee-role').value;
+                    if (!name || !login || !password) { alert('Заполните все обязательные поля'); return; }
+                    if (password.length < 6) { alert('Пароль должен содержать минимум 6 символов'); return; }
+                    if (App.state.users.find(u => u.login === login)) { alert('Пользователь с таким логином уже существует'); return; }
+                    const newUser = { id: 'user_' + Date.now(), login: login, password_hash: await App.auth.hashPassword(password), role: role, full_name: name, is_archived: false };
+                    App.state.users.push(newUser);
+                    if (DB.isReady) await DB.put('users', newUser);
+                    App.ui.closeModal('modal-add-employee');
+                    App.ui.renderSettings();
+                    alert('Сотрудник успешно добавлен');
+                },
+
+                showAddDeductionModal(preselectedName = '') {
+                    const select = document.getElementById('new-deduction-name');
+                    select.innerHTML = '<option value="">-- Выберите вид вычета --</option>';
+                    const uniqueDeductions = [...new Set(App.state.deductions.map(d => d.name))];
+                    uniqueDeductions.forEach(name => { select.innerHTML += `<option value="${name}" ${name === preselectedName ? 'selected' : ''}>${name}</option>`; });
+                    document.getElementById('new-deduction-price-fill').value = '';
+                    document.getElementById('new-deduction-price-check').value = '';
+                    document.getElementById('new-deduction-unit').value = 'штука';
+                    document.getElementById('new-deduction-date').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('modal-add-deduction').classList.add('active');
+                },
+                async addDeductionPrice() {
+                    const name = document.getElementById('new-deduction-name').value;
+                    const priceFill = parseFloat(document.getElementById('new-deduction-price-fill').value);
+                    const priceCheck = parseFloat(document.getElementById('new-deduction-price-check').value);
+                    const unit = document.getElementById('new-deduction-unit').value;
+                    const date = document.getElementById('new-deduction-date').value;
+                    if (!name || isNaN(priceFill) || isNaN(priceCheck) || !date) { alert('Заполните все обязательные поля'); return; }
+                    
+                    // Находим все версии этого вычета
+                    const existingVersions = App.state.deductions.filter(d => d.name === name);
+                    
+                    // Сортируем по дате начала (от новых к старым)
+                    const sorted = existingVersions.sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                    
+                    // Если есть текущая версия, закрываем её датой, предшествующей новой
+                    if (sorted.length > 0) {
+                        const currentVersion = sorted[0];
+                        const previousEndDate = App.utils.addDays(date, -1);
+                        currentVersion.end_date = previousEndDate;
+                        console.log('Закрываем предыдущую версию:', currentVersion.effective_date, 'по', previousEndDate);
+                        if (DB.isReady) await DB.put('deductions', currentVersion);
+                    }
+                    
+                    const newDeduction = { id: 'ded_' + Date.now(), name: name, price_fill: priceFill, price_check: priceCheck, unit: unit, effective_date: date, end_date: null, original_price_fill: priceFill, original_price_check: priceCheck, original_unit: unit, original_effective_date: date };
+                    App.state.deductions.push(newDeduction);
+                    if (DB.isReady) await DB.put('deductions', newDeduction);
+                    
+                    await DB.addAuditLog({
+                        type: 'Добавлена версия цены вычета',
+                        objectName: name,
+                        changes: {
+                            'Цена за заполнение': { old: '-', new: `${priceFill} руб.` },
+                            'Цена за проверку': { old: '-', new: `${priceCheck} руб.` },
+                            'Единица': { old: '-', new: unit },
+                            'Дата начала': { old: '-', new: date }
+                        },
+                        reason: 'Добавлена новая версия'
+                    });
+                    App.ui.closeModal('modal-add-deduction');
+                    App.ui.renderSettings();
+                    alert('Версия цены вычета успешно добавлена');
+                },
+                showEditDeductionModal(id) {
+                    const ded = App.state.deductions.find(d => d.id === id);
+                    if (!ded) { alert('Версия не найдена'); return; }
+                    const allVersions = App.state.deductions.filter(d => d.name === ded.name);
+                    const sorted = allVersions.sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                    const currentIndex = sorted.findIndex(v => v.id === id);
+                    const isArchival = currentIndex > 0;
+                    document.getElementById('edit-deduction-id').value = ded.id;
+                    document.getElementById('edit-deduction-name').value = ded.name;
+                    document.getElementById('edit-deduction-price-fill').value = ded.price_fill || 0;
+                    document.getElementById('edit-deduction-price-check').value = ded.price_check || 0;
+                    document.getElementById('edit-deduction-unit').value = ded.unit || 'штука';
+                    document.getElementById('edit-deduction-date').value = ded.effective_date;
+                    document.getElementById('edit-deduction-end-date').value = ded.end_date || '';
+                    document.getElementById('edit-deduction-reason').value = '';
+                    document.getElementById('edit-deduction-version-type').textContent = isArchival ? 'архивную версию' : 'текущую версию';
+                    document.getElementById('modal-edit-deduction').classList.add('active');
+                },
+                async saveDeductionEdit() {
+                    const id = document.getElementById('edit-deduction-id').value;
+                    const ded = App.state.deductions.find(d => d.id === id);
+                    if (!ded) { alert('Версия не найдена'); return; }
+                    const reason = document.getElementById('edit-deduction-reason').value.trim();
+                    if (!reason) { alert('Укажите причину изменения'); return; }
+                    const oldPriceFill = ded.price_fill;
+                    const oldPriceCheck = ded.price_check;
+                    const oldUnit = ded.unit;
+                    const oldDate = ded.effective_date;
+                    const oldEndDate = ded.end_date;
+                    const newPriceFill = parseFloat(document.getElementById('edit-deduction-price-fill').value);
+                    const newPriceCheck = parseFloat(document.getElementById('edit-deduction-price-check').value);
+                    const newUnit = document.getElementById('edit-deduction-unit').value;
+                    const newDate = document.getElementById('edit-deduction-date').value;
+                    const newEndDate = document.getElementById('edit-deduction-end-date').value || null;
+                    
+                    ded.price_fill = newPriceFill;
+                    ded.price_check = newPriceCheck;
+                    ded.unit = newUnit;
+                    ded.effective_date = newDate;
+                    ded.end_date = newEndDate;
+                    
+                    if (DB.isReady) await DB.put('deductions', ded);
+                    
+                    const allVersions = App.state.deductions.filter(d => d.name === ded.name);
+                    const sorted = allVersions.sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                    const currentIndex = sorted.findIndex(v => v.id === id);
+                    const isArchival = currentIndex > 0;
+                    
+                    await DB.addAuditLog({
+                        type: 'Изменена версия цены вычета',
+                        objectName: ded.name,
+                        objectId: ded.id,
+                        isArchival: isArchival,
+                        changes: {
+                            'Цена за заполнение': { old: `${oldPriceFill} руб.`, new: `${newPriceFill} руб.` },
+                            'Цена за проверку': { old: `${oldPriceCheck} руб.`, new: `${newPriceCheck} руб.` },
+                            'Единица': { old: oldUnit, new: newUnit },
+                            'Дата начала': { old: oldDate, new: newDate },
+                            'Дата окончания': { old: oldEndDate || 'по настоящее время', new: newEndDate || 'по настоящее время' }
+                        },
+                        reason: reason
+                    });
+                    App.ui.closeModal('modal-edit-deduction');
+                    App.ui.renderSettings();
+                    alert('Версия цены вычета обновлена');
+                },
+                async restoreDeductionOriginal() {
+                    const id = document.getElementById('edit-deduction-id').value;
+                    const ded = App.state.deductions.find(d => d.id === id);
+                    if (!ded) return;
+                    if (!confirm('Восстановить оригинальные значения?')) return;
+                    const oldPriceFill = ded.price_fill;
+                    const oldPriceCheck = ded.price_check;
+                    const oldUnit = ded.unit;
+                    const oldDate = ded.effective_date;
+                    ded.price_fill = ded.original_price_fill;
+                    ded.price_check = ded.original_price_check;
+                    ded.unit = ded.original_unit;
+                    ded.effective_date = ded.original_effective_date;
+                    if (DB.isReady) await DB.put('deductions', ded);
+                    await DB.addAuditLog({
+                        type: 'Восстановлена оригинальная версия цены вычета',
+                        objectName: ded.name,
+                        objectId: ded.id,
+                        changes: {
+                            'Цена за заполнение': { old: `${oldPriceFill} руб.`, new: `${ded.original_price_fill} руб.` },
+                            'Цена за проверку': { old: `${oldPriceCheck} руб.`, new: `${ded.original_price_check} руб.` },
+                            'Единица': { old: oldUnit, new: ded.original_unit },
+                            'Дата начала': { old: oldDate, new: ded.original_effective_date }
+                        },
+                        reason: 'Восстановление оригинальных значений'
+                    });
+                    App.ui.closeModal('modal-edit-deduction');
+                    App.ui.renderSettings();
+                    alert('Оригинальные значения восстановлены');
+                },
+                async deleteDeductionVersion() {
+                    const id = document.getElementById('edit-deduction-id').value;
+                    const ded = App.state.deductions.find(d => d.id === id);
+                    if (!ded) return;
+                    if (!confirm('Удалить эту версию цены вычета?')) return;
+                    await DB.addAuditLog({
+                        type: 'Удалена версия цены вычета',
+                        objectName: ded.name,
+                        objectId: ded.id,
+                        changes: {
+                            'Цена за заполнение': { old: `${ded.price_fill} руб.`, new: 'Удалено' },
+                            'Цена за проверку': { old: `${ded.price_check} руб.`, new: 'Удалено' },
+                            'Единица': { old: ded.unit, new: 'Удалено' }
+                        },
+                        reason: 'Удаление версии'
+                    });
+                    App.state.deductions = App.state.deductions.filter(d => d.id !== id);
+                    if (DB.isReady) await DB.delete('deductions', id);
+                    App.ui.closeModal('modal-edit-deduction');
+                    App.ui.renderSettings();
+                },
+
+                showAddActInfoModal() {
+                    document.getElementById('new-ai-name').value = '';
+                    document.getElementById('new-ai-poa').value = '';
+                    document.getElementById('new-ai-short').value = '';
+                    document.getElementById('new-ai-date').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('modal-add-act-info').classList.add('active');
+                },
+                async addActInfoVersion() {
+                    const full_name = document.getElementById('new-ai-name').value.trim();
+                    const poa = document.getElementById('new-ai-poa').value.trim();
+                    const short_name = document.getElementById('new-ai-short').value.trim();
+                    const effective_date = document.getElementById('new-ai-date').value;
+                    if (!full_name || !poa || !short_name || !effective_date) { alert('Заполните все обязательные поля'); return; }
+                    const newVersion = { id: 'ai_' + Date.now(), full_name, poa, short_name, effective_date, end_date: null, original_full_name: full_name, original_poa: poa, original_short_name: short_name, original_effective_date: effective_date };
+                    App.state.actInfoVersions.push(newVersion);
+                    App.state.actInfoVersions = App.utils.recalculateEndDates(App.state.actInfoVersions);
+                    if (DB.isReady) { for (const v of App.state.actInfoVersions) await DB.put('act_info_versions', v); }
+                    await DB.addAuditLog({
+                        type: 'Добавлена версия сведений Заказчика',
+                        objectName: short_name,
+                        changes: {
+                            'ФИО': { old: '-', new: full_name },
+                            'Доверенность': { old: '-', new: poa },
+                            'Дата начала': { old: '-', new: effective_date }
+                        },
+                        reason: 'Добавлена новая версия'
+                    });
+                    App.ui.closeModal('modal-add-act-info');
+                    App.ui.renderSettings();
+                    alert('Версия сведений Заказчика добавлена');
+                },
+                showEditActInfoModal(id) {
+                    const v = App.state.actInfoVersions.find(x => x.id === id);
+                    if (!v) { alert('Версия не найдена'); return; }
+                    const sorted = [...App.state.actInfoVersions].sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                    const currentIndex = sorted.findIndex(x => x.id === id);
+                    const isArchival = currentIndex > 0;
+                    document.getElementById('edit-ai-id').value = v.id;
+                    document.getElementById('edit-ai-name').value = v.full_name;
+                    document.getElementById('edit-ai-poa').value = v.poa;
+                    document.getElementById('edit-ai-short').value = v.short_name;
+                    document.getElementById('edit-ai-date').value = v.effective_date;
+                    document.getElementById('edit-ai-end-date').value = v.end_date || '';
+                    document.getElementById('edit-ai-reason').value = '';
+                    document.getElementById('edit-ai-version-type').textContent = isArchival ? 'архивную версию' : 'текущую версию';
+                    document.getElementById('modal-edit-act-info').classList.add('active');
+                },
+                async saveActInfoEdit() {
+                    const id = document.getElementById('edit-ai-id').value;
+                    const v = App.state.actInfoVersions.find(x => x.id === id);
+                    if (!v) { alert('Версия не найдена'); return; }
+                    const reason = document.getElementById('edit-ai-reason').value.trim();
+                    if (!reason) { alert('Укажите причину изменения'); return; }
+                    const oldFullName = v.full_name;
+                    const oldPoa = v.poa;
+                    const oldShortName = v.short_name;
+                    const oldDate = v.effective_date;
+                    v.full_name = document.getElementById('edit-ai-name').value.trim();
+                    v.poa = document.getElementById('edit-ai-poa').value.trim();
+                    v.short_name = document.getElementById('edit-ai-short').value.trim();
+                    v.effective_date = document.getElementById('edit-ai-date').value;
+                    App.state.actInfoVersions = App.utils.recalculateEndDates(App.state.actInfoVersions);
+                    if (DB.isReady) { for (const ver of App.state.actInfoVersions) await DB.put('act_info_versions', ver); }
+                    const sorted = [...App.state.actInfoVersions].sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                    const currentIndex = sorted.findIndex(x => x.id === id);
+                    const isArchival = currentIndex > 0;
+                    await DB.addAuditLog({
+                        type: 'Изменена версия сведений Заказчика',
+                        objectName: v.short_name,
+                        objectId: v.id,
+                        isArchival: isArchival,
+                        changes: {
+                            'ФИО': { old: oldFullName, new: v.full_name },
+                            'Доверенность': { old: oldPoa, new: v.poa },
+                            'Краткое ФИО': { old: oldShortName, new: v.short_name },
+                            'Дата начала': { old: oldDate, new: v.effective_date }
+                        },
+                        reason: reason
+                    });
+                    App.ui.closeModal('modal-edit-act-info');
+                    App.ui.renderSettings();
+                    alert('Версия сведений Заказчика обновлена');
+                },
+                async restoreActInfoOriginal() {
+                    const id = document.getElementById('edit-ai-id').value;
+                    const v = App.state.actInfoVersions.find(x => x.id === id);
+                    if (!v) return;
+                    if (!confirm('Восстановить оригинальные значения?')) return;
+                    const oldFullName = v.full_name;
+                    const oldPoa = v.poa;
+                    const oldShortName = v.short_name;
+                    const oldDate = v.effective_date;
+                    v.full_name = v.original_full_name;
+                    v.poa = v.original_poa;
+                    v.short_name = v.original_short_name;
+                    v.effective_date = v.original_effective_date;
+                    App.state.actInfoVersions = App.utils.recalculateEndDates(App.state.actInfoVersions);
+                    if (DB.isReady) { for (const ver of App.state.actInfoVersions) await DB.put('act_info_versions', ver); }
+                    await DB.addAuditLog({
+                        type: 'Восстановлена оригинальная версия сведений Заказчика',
+                        objectName: v.short_name,
+                        objectId: v.id,
+                        changes: {
+                            'ФИО': { old: oldFullName, new: v.original_full_name },
+                            'Доверенность': { old: oldPoa, new: v.original_poa },
+                            'Краткое ФИО': { old: oldShortName, new: v.original_short_name },
+                            'Дата начала': { old: oldDate, new: v.original_effective_date }
+                        },
+                        reason: 'Восстановление оригинальных значений'
+                    });
+                    App.ui.closeModal('modal-edit-act-info');
+                    App.ui.renderSettings();
+                    alert('Оригинальные значения восстановлены');
+                },
+                async deleteActInfoVersion() {
+                    const id = document.getElementById('edit-ai-id').value;
+                    const v = App.state.actInfoVersions.find(x => x.id === id);
+                    if (!v) return;
+                    if (!confirm('Удалить эту версию сведений Заказчика?')) return;
+                    await DB.addAuditLog({
+                        type: 'Удалена версия сведений Заказчика',
+                        objectName: v.short_name,
+                        objectId: v.id,
+                        changes: {
+                            'ФИО': { old: v.full_name, new: 'Удалено' },
+                            'Доверенность': { old: v.poa, new: 'Удалено' }
+                        },
+                        reason: 'Удаление версии'
+                    });
+                    App.state.actInfoVersions = App.state.actInfoVersions.filter(x => x.id !== id);
+                    App.state.actInfoVersions = App.utils.recalculateEndDates(App.state.actInfoVersions);
+                    if (DB.isReady) { await DB.delete('act_info_versions', id); for (const ver of App.state.actInfoVersions) await DB.put('act_info_versions', ver); }
+                    App.ui.closeModal('modal-edit-act-info');
+                    App.ui.renderSettings();
+                },
+
+                showAddContractModal(userId) {
+                    const user = App.state.users.find(u => u.id === userId);
+                    if (!user) return;
+                    document.getElementById('new-contract-user-id').value = userId;
+                    document.getElementById('new-contract-user-name').value = user.full_name;
+                    document.getElementById('new-contract-date').value = '';
+                    document.getElementById('new-contract-effective').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('modal-add-contract').classList.add('active');
+                },
+                async addContractVersion() {
+                    const userId = document.getElementById('new-contract-user-id').value;
+                    const contract_date = document.getElementById('new-contract-date').value;
+                    const effective_date = document.getElementById('new-contract-effective').value;
+                    if (!contract_date || !effective_date) { alert('Заполните все обязательные поля'); return; }
+                    if (!App.state.contractVersions[userId]) App.state.contractVersions[userId] = [];
+                    const newVersion = { id: 'cv_' + Date.now(), user_id: userId, contract_date, effective_date, end_date: null, original_contract_date: contract_date, original_effective_date: effective_date };
+                    App.state.contractVersions[userId].push(newVersion);
+                    App.state.contractVersions[userId] = App.utils.recalculateEndDates(App.state.contractVersions[userId]);
+                    if (DB.isReady) { for (const v of App.state.contractVersions[userId]) await DB.put('contract_versions', v); }
+                    const user = App.state.users.find(u => u.id === userId);
+                    await DB.addAuditLog({
+                        type: 'Добавлена версия договора сотрудника',
+                        objectName: user.full_name,
+                        changes: {
+                            'Дата договора': { old: '-', new: contract_date },
+                            'Дата начала': { old: '-', new: effective_date }
+                        },
+                        reason: 'Добавлена новая версия'
+                    });
+                    App.ui.closeModal('modal-add-contract');
+                    App.ui.renderSettings();
+                    alert('Версия договора сотрудника добавлена');
+                },
+                showEditContractModal(userId, versionId) {
+                    const user = App.state.users.find(u => u.id === userId);
+                    const v = (App.state.contractVersions[userId] || []).find(x => x.id === versionId);
+                    if (!user || !v) { alert('Версия не найдена'); return; }
+                    const versions = App.state.contractVersions[userId] || [];
+                    const sorted = [...versions].sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                    const currentIndex = sorted.findIndex(x => x.id === versionId);
+                    const isArchival = currentIndex > 0;
+                    document.getElementById('edit-contract-id').value = v.id;
+                    document.getElementById('edit-contract-user-id').value = userId;
+                    document.getElementById('edit-contract-user-name').value = user.full_name;
+                    document.getElementById('edit-contract-date').value = v.contract_date;
+                    document.getElementById('edit-contract-effective').value = v.effective_date;
+                    document.getElementById('edit-contract-end-date').value = v.end_date || '';
+                    document.getElementById('edit-contract-reason').value = '';
+                    document.getElementById('edit-contract-version-type').textContent = isArchival ? 'архивную версию' : 'текущую версию';
+                    document.getElementById('modal-edit-contract').classList.add('active');
+                },
+                async saveContractEdit() {
+                    const id = document.getElementById('edit-contract-id').value;
+                    const userId = document.getElementById('edit-contract-user-id').value;
+                    const v = (App.state.contractVersions[userId] || []).find(x => x.id === id);
+                    if (!v) { alert('Версия не найдена'); return; }
+                    const reason = document.getElementById('edit-contract-reason').value.trim();
+                    if (!reason) { alert('Укажите причину изменения'); return; }
+                    const oldContractDate = v.contract_date;
+                    const oldEffectiveDate = v.effective_date;
+                    v.contract_date = document.getElementById('edit-contract-date').value;
+                    v.effective_date = document.getElementById('edit-contract-effective').value;
+                    App.state.contractVersions[userId] = App.utils.recalculateEndDates(App.state.contractVersions[userId]);
+                    if (DB.isReady) { for (const ver of App.state.contractVersions[userId]) await DB.put('contract_versions', ver); }
+                    const versions = App.state.contractVersions[userId] || [];
+                    const sorted = [...versions].sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
+                    const currentIndex = sorted.findIndex(x => x.id === id);
+                    const isArchival = currentIndex > 0;
+                    const user = App.state.users.find(u => u.id === userId);
+                    await DB.addAuditLog({
+                        type: 'Изменена версия договора сотрудника',
+                        objectName: user.full_name,
+                        objectId: v.id,
+                        isArchival: isArchival,
+                        changes: {
+                            'Дата договора': { old: oldContractDate, new: v.contract_date },
+                            'Дата начала': { old: oldEffectiveDate, new: v.effective_date }
+                        },
+                        reason: reason
+                    });
+                    App.ui.closeModal('modal-edit-contract');
+                    App.ui.renderSettings();
+                    alert('Версия договора сотрудника обновлена');
+                },
+                async restoreContractOriginal() {
+                    const id = document.getElementById('edit-contract-id').value;
+                    const userId = document.getElementById('edit-contract-user-id').value;
+                    const v = (App.state.contractVersions[userId] || []).find(x => x.id === id);
+                    if (!v) return;
+                    if (!confirm('Восстановить оригинальные значения?')) return;
+                    const oldContractDate = v.contract_date;
+                    const oldEffectiveDate = v.effective_date;
+                    v.contract_date = v.original_contract_date;
+                    v.effective_date = v.original_effective_date;
+                    App.state.contractVersions[userId] = App.utils.recalculateEndDates(App.state.contractVersions[userId]);
+                    if (DB.isReady) { for (const ver of App.state.contractVersions[userId]) await DB.put('contract_versions', ver); }
+                    const user = App.state.users.find(u => u.id === userId);
+                    await DB.addAuditLog({
+                        type: 'Восстановлена оригинальная версия договора сотрудника',
+                        objectName: user.full_name,
+                        objectId: v.id,
+                        changes: {
+                            'Дата договора': { old: oldContractDate, new: v.original_contract_date },
+                            'Дата начала': { old: oldEffectiveDate, new: v.original_effective_date }
+                        },
+                        reason: 'Восстановление оригинальных значений'
+                    });
+                    App.ui.closeModal('modal-edit-contract');
+                    App.ui.renderSettings();
+                    alert('Оригинальные значения восстановлены');
+                },
+                async deleteContractVersion() {
+                    const id = document.getElementById('edit-contract-id').value;
+                    const userId = document.getElementById('edit-contract-user-id').value;
+                    const v = (App.state.contractVersions[userId] || []).find(x => x.id === id);
+                    if (!v) return;
+                    if (!confirm('Удалить эту версию договора сотрудника?')) return;
+                    const user = App.state.users.find(u => u.id === userId);
+                    await DB.addAuditLog({
+                        type: 'Удалена версия договора сотрудника',
+                        objectName: user.full_name,
+                        objectId: v.id,
+                        changes: {
+                            'Дата договора': { old: v.contract_date, new: 'Удалено' },
+                            'Дата начала': { old: v.effective_date, new: 'Удалено' }
+                        },
+                        reason: 'Удаление версии'
+                    });
+                    App.state.contractVersions[userId] = App.state.contractVersions[userId].filter(x => x.id !== id);
+                    App.state.contractVersions[userId] = App.utils.recalculateEndDates(App.state.contractVersions[userId]);
+                    if (DB.isReady) { await DB.delete('contract_versions', id); for (const ver of App.state.contractVersions[userId]) await DB.put('contract_versions', ver); }
+                    App.ui.closeModal('modal-edit-contract');
+                    App.ui.renderSettings();
+                }
+            },
+
+            export: {
+                generateExcel() {
+                    const table = document.getElementById('act-table');
+                    const wb = XLSX.utils.table_to_book(table, { sheet: "Акт" });
+                    XLSX.writeFile(wb, `Акт_НВ_Кард_${new Date().toISOString().split('T')[0]}.xlsx`);
+                },
+                generateWord() {
+                    const month = parseInt(document.getElementById('act-month').value);
+                    const year = parseInt(document.getElementById('act-year').value);
+                    const executorFilter = document.getElementById('act-filter-executor').value;
+                    let executorUser;
+                    if (executorFilter !== 'all') executorUser = App.state.users.find(u => u.id === executorFilter);
+                    else executorUser = App.state.currentUser;
+                    if (!executorUser) { alert('Не выбран исполнитель для формирования акта'); return; }
+                    
+                    const periodDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
+                    const actInfo = App.utils.getActInfoForDate(periodDate);
+                    const contractVersion = App.utils.getContractForDate(executorUser.id, periodDate);
+                    const contractDate = contractVersion ? contractVersion.contract_date : '2026-02-04';
+                    
+                    let tasks = App.state.tasks.filter(t => {
+                        const d = new Date(t.fill_date);
+                        const matchDate = d.getMonth() + 1 === month && d.getFullYear() === year;
+                        const matchUser = t.user_id === executorUser.id;
+                        const matchStatus = t.status === 'заполнен' || t.status === 'проверен';
+                        const notExcluded = !t.exclude_from_act;
+                        return matchDate && matchUser && matchStatus && notExcluded && t.deduction_type && t.deduction_value > 0;
+                    });
+
+                    const firstDay = new Date(year, month - 1, 1);
+                    const lastDay = new Date(year, month, 0);
+                    const nextMonthFirstDay = new Date(year, month, 1);
+                    
+                    const formatDate = (date) => {
+                        const day = date.getDate().toString().padStart(2, '0');
+                        const monthName = date.toLocaleString('ru', { month: 'long' });
+                        return `${day} ${monthName} ${date.getFullYear()} года`;
+                    };
+                    const formatDateWithQuotes = (date) => {
+                        const day = date.getDate();
+                        const monthName = date.toLocaleString('ru', { month: 'long' });
+                        return `«${day}» ${monthName} ${date.getFullYear()} года`;
+                    };
+
+                    let totalSum = 0;
+                    let tableRows = '';
+                    tasks.forEach((task, index) => {
+                        const sum = task.applied_price * task.deduction_value;
+                        totalSum += sum;
+                        const serviceName = task.deduction_type + (task.comments ? ` (${task.comments})` : '');
+                        tableRows += `<tr>
+                            <td style="border:1px solid black; padding:4px;">${index + 1}</td>
+                            <td style="border:1px solid black; padding:4px;">${formatDate(new Date(task.fill_date))}</td>
+                            <td style="border:1px solid black; padding:4px;">${serviceName}</td>
+                            <td style="border:1px solid black; padding:4px;">${task.certificate} ${task.client_fio}</td>
+                            <td style="border:1px solid black; padding:4px;">${task.applied_price.toFixed(2)}</td>
+                            <td style="border:1px solid black; padding:4px;">${task.deduction_value}</td>
+                            <td style="border:1px solid black; padding:4px;">${sum.toFixed(2)}</td>
+                        </tr>`;
+                    });
+
+                    const actInfoFullName = actInfo ? actInfo.full_name : '________';
+                    const actInfoPoa = actInfo ? actInfo.poa : '________';
+                    const actInfoShortName = actInfo ? actInfo.short_name : '________';
+
+                    // ИСПРАВЛЕНИЕ: Использование отдельных параграфов для вводной части
+                    const wordContent = `
+                        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                        <head><meta charset='utf-8'><title>Акт-отчет</title></head>
+                        <body>
+                            <div style="text-align: center; font-family: 'Times New Roman', Times, serif; font-size: 14pt; font-weight: bold; margin-bottom: 10px;">
+                                АКТ-ОТЧЕТ № ${year}-${month.toString().padStart(2, '0')}
+                            </div>
+                            <div style="text-align: center; font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin-bottom: 20px;">
+                                приёма-передачи оказанных услуг
+                            </div>
+                            <div style="text-align: center; font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 20px 0;">
+                                за период с ${formatDate(firstDay)} по ${formatDate(lastDay)}.
+                            </div>
+                            <table style="width:100%; border:none; margin-bottom:20px;">
+                                <tr>
+                                    <td style="width:50%; border:none; text-align:left; font-family: 'Times New Roman', Times, serif; font-size: 12pt;">г. Владимир</td>
+                                    <td style="width:50%; border:none; text-align:right; font-family: 'Times New Roman', Times, serif; font-size: 12pt;">${formatDateWithQuotes(nextMonthFirstDay)}</td>
+                                </tr>
+                            </table>
+                            <p style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; text-align: justify; margin: 12px 0;">
+                                Общество с ограниченной ответственностью «Юридические Решения», именуемое в дальнейшем «Заказчик», в лице ${actInfoFullName}, действующего на основании ${actInfoPoa}, с одной стороны и
+                            </p>
+                            <p style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; text-align: justify; margin: 12px 0;">
+                                гражданин(-ка) РФ ${executorUser.full_name}, именуемый(-ая) в дальнейшем «Исполнитель», с другой стороны,
+                            </p>
+                            <p style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; text-align: justify; margin: 12px 0;">
+                                далее совместно именуемые «Стороны», а по отдельности – «Сторона», составили настоящий акт-отчет приёма-передачи оказанных услуг (далее – «Акт-отчет») к договору возмездного оказания услуг от ${formatDateWithQuotes(new Date(contractDate))} (далее – «Договор») о нижеследующем:
+                            </p>
+                            <div style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 20px 0;">
+                                <strong>1. За период с ${formatDate(firstDay)} по ${formatDate(lastDay)} (далее – «Отчётный период») Исполнитель оказал услуги по Договору:</strong>
+                            </div>
+                            <table border="1" cellpadding="4" cellspacing="0" style="width:100%; border-collapse:collapse; font-family: 'Times New Roman', Times, serif; font-size: 11pt; margin: 20px 0;">
+                                <thead>
+                                    <tr style="background-color:#f0f0f0;">
+                                        <th style="border:1px solid black; padding:4px;">№</th>
+                                        <th style="border:1px solid black; padding:4px;">Дата</th>
+                                        <th style="border:1px solid black; padding:4px;">Наименование услуги</th>
+                                        <th style="border:1px solid black; padding:4px;">Описание</th>
+                                        <th style="border:1px solid black; padding:4px;">Цена (руб.),<br>в том числе НДФЛ</th>
+                                        <th style="border:1px solid black; padding:4px;">Кол-во (шт.)</th>
+                                        <th style="border:1px solid black; padding:4px;">Сумма (руб.),<br>в том числе НДФЛ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${tableRows}
+                                </tbody>
+                            </table>
+                            <div style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 20px 0;">
+                                <strong>2. Сумма оказанных услуг по Договору составляет ${App.utils.formatMoney(totalSum)}, в том числе НДФЛ.</strong>
+                            </div>
+                            <div style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 10px 0;">
+                                3. Услуги оказаны полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания Услуг не имеет.
+                            </div>
+                            <div style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 10px 0;">
+                                4. Заказчик оплатил услуги полностью и в срок. Исполнитель претензий к Заказчику не имеет.
+                            </div>
+                            <div style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 10px 0;">
+                                5. Настоящий Акт-отчет составлен в двух экземплярах, по одному для каждой из Сторон.
+                            </div>
+                            <table style="width:100%; border:none; margin-top:15px;">
+                                <tr>
+                                    <td style="width:50%; border:none; vertical-align:top; font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
+                                        <strong>Заказчик</strong><br><br>
+                                        _________________ (${actInfoShortName})<br>
+                                        М.П.
+                                    </td>
+                                    <td style="width:50%; border:none; vertical-align:top; font-family: 'Times New Roman', Times, serif; font-size: 12pt;">
+                                        <strong>Исполнитель</strong><br><br>
+                                        _________________ (${executorUser.full_name})
+                                    </td>
+                                </tr>
+                            </table>
+                        </body>
+                        </html>
+                    `;
+
+                    const blob = new Blob(['\ufeff', wordContent], { type: 'application/msword' });
+                    saveAs(blob, `Акт-отчет_${year}-${month.toString().padStart(2, '0')}_${executorUser.full_name.replace(/\s+/g, '_')}.doc`);
+                },
+                showActPreview() {
+                    const month = parseInt(document.getElementById('act-month').value);
+                    const year = parseInt(document.getElementById('act-year').value);
+                    const executorFilter = document.getElementById('act-filter-executor').value;
+                    let executorUser;
+                    if (executorFilter !== 'all') executorUser = App.state.users.find(u => u.id === executorFilter);
+                    else executorUser = App.state.currentUser;
+                    if (!executorUser) { alert('Не выбран исполнитель для формирования акта'); return; }
+                    
+                    const periodDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
+                    const actInfo = App.utils.getActInfoForDate(periodDate);
+                    const contractVersion = App.utils.getContractForDate(executorUser.id, periodDate);
+                    const contractDate = contractVersion ? contractVersion.contract_date : '2026-02-04';
+                    
+                    let tasks = App.state.tasks.filter(t => {
+                        const d = new Date(t.fill_date);
+                        const matchDate = d.getMonth() + 1 === month && d.getFullYear() === year;
+                        const matchUser = t.user_id === executorUser.id;
+                        const matchStatus = t.status === 'заполнен' || t.status === 'проверен';
+                        const notExcluded = !t.exclude_from_act;
+                        return matchDate && matchUser && matchStatus && notExcluded && t.deduction_type && t.deduction_value > 0;
+                    });
+
+                    const firstDay = new Date(year, month - 1, 1);
+                    const lastDay = new Date(year, month, 0);
+                    const nextMonthFirstDay = new Date(year, month, 1);
+                    
+                    const formatDate = (date) => {
+                        const day = date.getDate().toString().padStart(2, '0');
+                        const monthName = date.toLocaleString('ru', { month: 'long' });
+                        return `${day} ${monthName} ${date.getFullYear()} года`;
+                    };
+                    const formatDateWithQuotes = (date) => {
+                        const day = date.getDate();
+                        const monthName = date.toLocaleString('ru', { month: 'long' });
+                        return `«${day}» ${monthName} ${date.getFullYear()} года`;
+                    };
+
+                    let totalSum = 0;
+                    const tableRows = tasks.map((task, index) => {
+                        const sum = task.applied_price * task.deduction_value;
+                        totalSum += sum;
+                        const serviceName = task.deduction_type + (task.comments ? ` (${task.comments})` : '');
+                        return { num: index + 1, date: formatDate(new Date(task.fill_date)), service: serviceName, description: `${task.certificate} ${task.client_fio}`, price: task.applied_price.toFixed(2), qty: task.deduction_value, sum: sum.toFixed(2) };
+                    });
+
+                    const actInfoFullName = actInfo ? actInfo.full_name : '________';
+                    const actInfoPoa = actInfo ? actInfo.poa : '________';
+                    const actInfoShortName = actInfo ? actInfo.short_name : '________';
+
+                    const actHTML = `
+                        <div class="act-document" id="act-for-export">
+                            <div class="act-header">
+                                <div class="act-title">АКТ-ОТЧЕТ № ${year}-${month.toString().padStart(2, '0')}</div>
+                                <div>приёма-передачи оказанных услуг</div>
+                            </div>
+                            <div class="act-period">за период с ${formatDate(firstDay)} по ${formatDate(lastDay)}.</div>
+                            <div class="act-location-date">
+                                <div>г. Владимир</div>
+                                <div>${formatDateWithQuotes(nextMonthFirstDay)}</div>
+                            </div>
+                            <div class="act-parties">
+                                Общество с ограниченной ответственностью «Юридические Решения», именуемое в дальнейшем «Заказчик», в лице ${actInfoFullName}, действующего на основании ${actInfoPoa}, с одной стороны и<br><br>
+                                гражданин(-ка) РФ ${executorUser.full_name}, именуемый(-ая) в дальнейшем «Исполнитель», с другой стороны,<br><br>
+                                далее совместно именуемые «Стороны», а по отдельности – «Сторона», составили настоящий акт-отчет приёма-передачи оказанных услуг (далее – «Акт-отчет») к договору возмездного оказания услуг от ${formatDateWithQuotes(new Date(contractDate))} (далее – «Договор») о нижеследующем:
+                            </div>
+                            <div style="margin: 20px 0;"><strong>1. За период с ${formatDate(firstDay)} по ${formatDate(lastDay)} (далее – «Отчётный период») Исполнитель оказал услуги по Договору:</strong></div>
+                            <table class="act-table">
+                                <thead><tr><th style="width: 5%">№</th><th style="width: 15%">Дата</th><th style="width: 25%">Наименование услуги</th><th style="width: 25%">Описание</th><th style="width: 10%">Цена (руб.), в том числе НДФЛ</th><th style="width: 10%">Кол-во (шт.)</th><th style="width: 10%">Сумма (руб.), в том числе НДФЛ</th></tr></thead>
+                                <tbody>${tableRows.map(row => `<tr><td>${row.num}</td><td>${row.date}</td><td>${row.service}</td><td>${row.description}</td><td>${row.price}</td><td>${row.qty}</td><td>${row.sum}</td></tr>`).join('')}</tbody>
+                            </table>
+                            <div class="act-total">2. Сумма оказанных услуг по Договору составляет ${App.utils.formatMoney(totalSum)}, в том числе НДФЛ.</div>
+                            <div style="margin: 10px 0;">3. Услуги оказаны полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания Услуг не имеет.</div>
+                            <div style="margin: 10px 0;">4. Заказчик оплатил услуги полностью и в срок. Исполнитель претензий к Заказчику не имеет.</div>
+                            <div style="margin: 10px 0;">5. Настоящий Акт-отчет составлен в двух экземплярах, по одному для каждой из Сторон.</div>
+                            <div class="act-signatures">
+                                <div class="act-signature-block"><strong>Заказчик</strong><div class="act-signature-line">_________________ (${actInfoShortName})<br>М.П.</div></div>
+                                <div class="act-signature-block"><strong>Исполнитель</strong><div class="act-signature-line">_________________ (${executorUser.full_name})</div></div>
+                            </div>
+                        </div>`;
+
+                    document.getElementById('act-preview-content').innerHTML = actHTML;
+                    document.getElementById('modal-act-preview').classList.add('active');
+                },
+                downloadActPDF() {
+                    const element = document.getElementById('act-for-export');
+                    const opt = { margin: 10, filename: `Акт-отчет_${new Date().toISOString().split('T')[0]}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+                    html2pdf().set(opt).from(element).save();
+                }
+            },
+
+            data: {
+                async syncPendingToDB() {
+                    if (!DB.isReady || App.state.pendingTaskIds.size === 0) return;
+                    console.log(`Синхронизация ${App.state.pendingTaskIds.size} задач с БД...`);
+                    const tasksToSync = App.state.tasks.filter(t => App.state.pendingTaskIds.has(t.id));
+                    for (const task of tasksToSync) { try { await DB.put('tasks', task); App.state.pendingTaskIds.delete(task.id); } catch (e) { console.warn('Не удалось синхронизировать задачу:', task.id, e); } }
+                    App.ui.setSaveStatus('saved');
+                },
+                async exportJSON() {
+                    const data = {
+                        users: DB.isReady ? await DB.getAll('users') : App.state.users,
+                        tasks: App.state.tasks,
+                        deductions: DB.isReady ? await DB.getAll('deductions') : App.state.deductions,
+                        act_info_versions: App.state.actInfoVersions,
+                        contract_versions: App.state.contractVersions,
+                        audit_log: App.state.auditLog,
+                        exportDate: new Date().toISOString(),
+                        version: CONFIG.version
+                    };
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    saveAs(blob, `nvkard_backup_${new Date().toISOString().split('T')[0]}.json`);
+                },
+                async importJSON(input) {
+                    const file = input.files[0];
+                    if (!file) return;
+                    if (!confirm('Это перезапишет все текущие локальные данные. Продолжить?')) return;
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    
+                    // МИГРАЦИЯ 1: Конвертация старых вычетов
+                    if (data.deductions) {
+                        data.deductions = data.deductions.map(d => {
+                            // Если есть старое поле price, но нет новых полей
+                            if (d.price !== undefined && d.price_fill === undefined) {
+                                console.log('Миграция вычета:', d.name, 'price:', d.price);
+                                return {
+                                    ...d,
+                                    price_fill: d.price,
+                                    price_check: d.price + 10,
+                                    original_price_fill: d.price,
+                                    original_price_check: d.price + 10,
+                                    original_effective_date: d.effective_date || '2022-01-01'
+                                };
+                            }
+                            // Если есть price_fill, но нет price_check
+                            if (d.price_fill !== undefined && d.price_check === undefined) {
+                                return {
+                                    ...d,
+                                    price_check: d.price_fill + 10,
+                                    original_price_check: (d.original_price_fill || d.price_fill) + 10
+                                };
+                            }
+                            return d;
+                        });
+                    }
+                    
+                    // МИГРАЦИЯ 2: Обработка старых пользователей с contract_date на верхнем уровне
+                    if (data.users) {
+                        const migratedContractVersions = data.contract_versions || {};
+                        data.users.forEach(u => {
+                            if (u.contract_date && !migratedContractVersions[u.id]) {
+                                console.log('Миграция договора пользователя:', u.full_name, u.contract_date);
+                                migratedContractVersions[u.id] = [{
+                                    id: 'c_migrated_' + u.id,
+                                    user_id: u.id,
+                                    contract_date: u.contract_date,
+                                    effective_date: u.contract_date,
+                                    end_date: null,
+                                    original_contract_date: u.contract_date,
+                                    original_effective_date: u.contract_date
+                                }];
+                                delete u.contract_date;
+                            }
+                        });
+                        data.contract_versions = migratedContractVersions;
+                    }
+                    
+                    if (DB.isReady) {
+                        const tx = DB.db.transaction(['users', 'tasks', 'deductions', 'act_info_versions', 'contract_versions', 'audit_log'], 'readwrite');
+                        tx.objectStore('users').clear(); tx.objectStore('tasks').clear(); tx.objectStore('deductions').clear();
+                        tx.objectStore('act_info_versions').clear(); tx.objectStore('contract_versions').clear(); tx.objectStore('audit_log').clear();
+                        if (data.users) data.users.forEach(item => tx.objectStore('users').put(item));
+                        if (data.tasks) data.tasks.forEach(item => tx.objectStore('tasks').put(item));
+                        if (data.deductions) data.deductions.forEach(item => tx.objectStore('deductions').put(item));
+                        if (data.act_info_versions) data.act_info_versions.forEach(item => tx.objectStore('act_info_versions').put(item));
+                        if (data.contract_versions) { for (const userId in data.contract_versions) { data.contract_versions[userId].forEach(item => tx.objectStore('contract_versions').put(item)); } }
+                        if (data.audit_log) data.audit_log.forEach(item => tx.objectStore('audit_log').put(item));
+                        tx.oncomplete = () => { alert('Данные успешно импортированы. Страница будет перезагружена.'); location.reload(); };
+                    } else {
+                        if (data.users) App.state.users = data.users;
+                        if (data.tasks) { App.state.tasks = data.tasks; App.state.pendingTaskIds.clear(); }
+                        if (data.deductions) App.state.deductions = data.deductions;
+                        if (data.act_info_versions) App.state.actInfoVersions = data.act_info_versions;
+                        if (data.contract_versions) App.state.contractVersions = data.contract_versions;
+                        if (data.audit_log) App.state.auditLog = data.audit_log;
+                        alert('Данные импортированы в память.');
+                        App.ui.renderCurrentWork();
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', function() {
+            const devSelect = document.getElementById('dev-user-select');
+            devSelect.innerHTML = '<option value="">-- Выберите пользователя для теста --</option>';
+            CONFIG.initialUsers.forEach(function(user) {
+                const option = document.createElement('option');
+                option.value = user.login;
+                let roleName = 'Сотрудник';
+                if (user.role === 'admin') roleName = 'Администратор';
+                if (user.role === 'superadmin') roleName = 'Супер-админ';
+                option.textContent = user.full_name + ' (' + roleName + ')';
+                devSelect.appendChild(option);
+            });
+            devSelect.addEventListener('change', function() { if (this.value) App.auth.login(this.value); });
+            DB.init().then(function() { console.log('База данных инициализирована'); }).catch(function(err) { console.error('Ошибка инициализации БД:', err); });
+            const savedTheme = localStorage.getItem('nvkard_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            sessionChannel.onmessage = function(event) {
+                if (event.data.type === 'LOGIN' && App.state.currentUser && event.data.user !== App.state.currentUser.login) {
+                    alert('Активная сессия уже открыта в другой вкладке под другим пользователем.');
+                    App.auth.logout();
+                }
+            };
+        });
+    </script>
+</body>
+</html>

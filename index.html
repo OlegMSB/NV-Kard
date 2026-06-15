@@ -14,6 +14,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.37.2/docxtemplater.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-primary: #FFFFFF; --text-primary: #1A1A1A; --text-secondary: #5A5A5A;
@@ -488,6 +489,11 @@
     </div>
 
     <script>
+        // Подключение к Supabase
+const SUPABASE_URL = 'https://rfyirxyenmrveckbdvye.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_g4IrvSIIHb9_dC9QueozoQ_mornNV_S';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const CONFIG = {
             version: '1.7.5',
             dbName: 'NVKardDB',
@@ -533,186 +539,51 @@
             initialAuditLog: []
         };
 
-        const DB = {
-            db: null,
-            isReady: false,
-            async init() {
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open(CONFIG.dbName, CONFIG.dbVersion);
-                    request.onupgradeneeded = (event) => {
-                        const db = event.target.result;
-                        const oldVersion = event.oldVersion;
-                        
-                        if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'id' });
-                        if (!db.objectStoreNames.contains('tasks')) db.createObjectStore('tasks', { keyPath: 'id' });
-                        if (!db.objectStoreNames.contains('deductions')) db.createObjectStore('deductions', { keyPath: 'id' });
-                        if (!db.objectStoreNames.contains('act_info_versions')) db.createObjectStore('act_info_versions', { keyPath: 'id' });
-                        if (!db.objectStoreNames.contains('contract_versions')) db.createObjectStore('contract_versions', { keyPath: 'id' });
-                        if (!db.objectStoreNames.contains('audit_log')) db.createObjectStore('audit_log', { keyPath: 'id', autoIncrement: true });
-                        
-                        // Миграция с версии 5 на 6: принудительная переустановка цен
-                        if (oldVersion < 6 && db.objectStoreNames.contains('deductions')) {
-                            console.log('Запущена миграция БД с версии', oldVersion, 'на версию 6');
-                            const dedStore = db.transaction('deductions', 'readwrite').objectStore('deductions');
-                            const getAllRequest = dedStore.getAll();
-                            
-                            getAllRequest.onsuccess = () => {
-                                const allDeductions = getAllRequest.result;
-                                console.log('Найдено вычетов для миграции:', allDeductions.length);
-                                
-                                // Сопоставление названий с правильными ценами
-                                const correctPrices = {
-                                    'Имущественный вычет': { fill: 300, check: 310, unit: 'штука' },
-                                    'Социальный вычет': { fill: 230, check: 240, unit: 'штука' },
-                                    'Инвестиционный вычет': { fill: 230, check: 240, unit: 'штука' },
-                                    'ЦБ (учет убытков, сальдирование)': { fill: 200, check: 210, unit: 'штука' },
-                                    'Декларирование доходов, полученных на территории РФ': { fill: 301, check: 311, unit: 'стр.' },
-                                    'Декларирование доходов, полученных за пределами РФ': { fill: 31, check: 41, unit: 'стр.' }
-                                };
-                                
-                                let updatedCount = 0;
-                                allDeductions.forEach(record => {
-                                    const correctPrice = correctPrices[record.name];
-                                    if (correctPrice) {
-                                        // Обновляем цены только если они нулевые или undefined
-                                        if (!record.price_fill || record.price_fill === 0 || record.price_fill === undefined) {
-                                            record.price_fill = correctPrice.fill;
-                                            record.original_price_fill = correctPrice.fill;
-                                            updatedCount++;
-                                            console.log('Обновлена цена за заполнение для', record.name, ':', correctPrice.fill);
-                                        }
-                                        if (!record.price_check || record.price_check === 0 || record.price_check === undefined) {
-                                            record.price_check = correctPrice.check;
-                                            record.original_price_check = correctPrice.check;
-                                            updatedCount++;
-                                            console.log('Обновлена цена за проверку для', record.name, ':', correctPrice.check);
-                                        }
-                                        if (!record.unit || record.unit === '') {
-                                            record.unit = correctPrice.unit;
-                                            record.original_unit = correctPrice.unit;
-                                            updatedCount++;
-                                        }
-                                        
-                                        // Обновляем запись в БД
-                                        dedStore.put(record);
-                                    }
-                                });
-                                
-                                console.log('Всего обновлено полей:', updatedCount);
-                            };
-                        }
-                        
-                        // Миграция задач: добавление поля exclude_from_act
-                        if (oldVersion < 6 && db.objectStoreNames.contains('tasks')) {
-                            const taskStore = db.transaction('tasks', 'readwrite').objectStore('tasks');
-                            const taskCursor = taskStore.openCursor();
-                            taskCursor.onsuccess = (cursorEvent) => {
-                                const cursor = cursorEvent.target.result;
-                                if (cursor) {
-                                    const record = cursor.value;
-                                    if (record.exclude_from_act === undefined) {
-                                        record.exclude_from_act = false;
-                                        cursor.update(record);
-                                    }
-                                    cursor.continue();
-                                }
-                            };
-                        }
-                    };
-                    request.onsuccess = (event) => {
-                        this.db = event.target.result;
-                        this.seedData().then(() => {
-                            this.isReady = true;
-                            App.data.syncPendingToDB();
-                            resolve();
-                        });
-                    };
-                    request.onerror = () => reject(request.error);
-                });
-            },
-            async seedData() {
-                const tx = this.db.transaction(['users', 'deductions', 'act_info_versions', 'contract_versions', 'audit_log'], 'readwrite');
-                const usersStore = tx.objectStore('users');
-                const dedStore = tx.objectStore('deductions');
-                const aiStore = tx.objectStore('act_info_versions');
-                const cvStore = tx.objectStore('contract_versions');
-                const auditStore = tx.objectStore('audit_log');
-
-                const count = await new Promise(r => usersStore.count().onsuccess = e => r(e.target.result));
-                if (count === 0) {
-                    for (const user of CONFIG.initialUsers) {
-                        user.password_hash = await App.auth.hashPassword(CONFIG.initialPasswords[user.login]);
-                        usersStore.add(user);
-                    }
-                    for (const ded of CONFIG.initialDeductions) dedStore.add(ded);
-                    for (const ai of CONFIG.initialActInfoVersions) aiStore.add(ai);
-                    for (const userId in CONFIG.initialContractVersions) {
-                        for (const cv of CONFIG.initialContractVersions[userId]) cvStore.add(cv);
-                    }
-                    for (const log of CONFIG.initialAuditLog) auditStore.add(log);
-                }
-                return new Promise(resolve => tx.oncomplete = resolve);
-            },
-            async getAll(storeName) {
-                return new Promise(resolve => {
-                    const tx = this.db.transaction(storeName, 'readonly');
-                    const request = tx.objectStore(storeName).getAll();
-                    request.onsuccess = () => resolve(request.result);
-                });
-            },
-            async put(storeName, data) {
-                return new Promise(resolve => {
-                    const tx = this.db.transaction(storeName, 'readwrite');
-                    tx.objectStore(storeName).put(data);
-                    tx.oncomplete = () => resolve();
-                });
-            },
-            async delete(storeName, id) {
-                return new Promise(resolve => {
-                    const tx = this.db.transaction(storeName, 'readwrite');
-                    tx.objectStore(storeName).delete(id);
-                    tx.oncomplete = () => resolve();
-                });
-            },
-            async addAuditLog(entry) {
-                try {
-                    if (!DB.isReady || !DB.db) {
-                        console.warn('БД не готова, добавляем в память:', entry);
-                        if (!App.state.auditLog) App.state.auditLog = [];
-                        App.state.auditLog.push({
-                            ...entry,
-                            id: 'audit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                            timestamp: new Date().toISOString(),
-                            user_id: App.state.currentUser?.id || 'system',
-                            user_login: App.state.currentUser?.login || 'system'
-                        });
-                        return;
-                    }
-                    
-                    const auditEntry = {
-                        ...entry,
-                        timestamp: new Date().toISOString(),
-                        user_id: App.state.currentUser?.id || 'system',
-                        user_login: App.state.currentUser?.login || 'system'
-                    };
-                    
-                    await DB.put('audit_log', auditEntry);
-                    if (!App.state.auditLog) App.state.auditLog = [];
-                    App.state.auditLog.push(auditEntry);
-                    console.log('Запись добавлена в журнал аудита:', auditEntry);
-                } catch (error) {
-                    console.error('Ошибка при добавлении в журнал аудита:', error);
-                    if (!App.state.auditLog) App.state.auditLog = [];
-                    App.state.auditLog.push({
-                        ...entry,
-                        id: 'audit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                        timestamp: new Date().toISOString(),
-                        user_id: App.state.currentUser?.id || 'system',
-                        user_login: App.state.currentUser?.login || 'system'
-                    });
-                }
-            }
-        };
+       const DB = {
+    isReady: false,
+    
+    async init() {
+        this.isReady = true;
+        console.log('✅ Подключено к Supabase');
+    },
+    
+    async getAll(table) {
+        const { data, error } = await supabase.from(table).select('*');
+        if (error) {
+            console.error('❌ Ошибка чтения:', error);
+            return [];
+        }
+        return data;
+    },
+    
+    async put(table, data) {
+        const { error } = await supabase.from(table).upsert(data);
+        if (error) console.error('❌ Ошибка записи:', error);
+    },
+    
+    async delete(table, id) {
+        const { error } = await supabase.from(table).delete().eq('id', id);
+        if (error) console.error('❌ Ошибка удаления:', error);
+    },
+    
+    async seedData() {
+        // Данные уже в Supabase
+    },
+    
+    async addAuditLog(entry) {
+        const { error } = await supabase.from('audit_log').insert([{
+            type: entry.type,
+            object_name: entry.objectName,
+            object_id: entry.objectId,
+            changes: entry.changes,
+            reason: entry.reason,
+            is_archival: entry.isArchival || false,
+            user_id: entry.user_id,
+            user_login: entry.user_login
+        }]);
+        if (error) console.error('❌ Ошибка аудита:', error);
+    }
+};
 
         const sessionChannel = new BroadcastChannel('nv-kard-session');
         

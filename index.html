@@ -163,10 +163,17 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 .warning-box strong { color: var(--warning); }
 .exclude-checkbox { cursor: pointer; width: 18px; height: 18px; }
 .price-info { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 2000; color: white; font-size: 18px; flex-direction: column; gap: 16px; }
+.loading-spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 @media print { header, .tabs, .toolbar, .no-print { display: none !important; } body { background-color: white !important; color: black !important; } .modal-overlay.active { position: static; background: none; } .modal { box-shadow: none; max-height: none; overflow: visible; transform: none; padding: 0; width: 100%; } }
 </style>
 </head>
 <body>
+<div id="loading-overlay" class="loading-overlay hidden">
+<div class="loading-spinner"></div>
+<div id="loading-text">Загрузка данных...</div>
+</div>
 <div id="login-screen">
 <div class="login-box">
 <h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.7.6</span></h2>
@@ -482,6 +489,7 @@ dbName: 'NVKardDB',
 dbVersion: 6,
 inactivityTimeout: 60 * 60 * 1000,
 autoSaveInterval: 60 * 1000,
+requestTimeout: 15000, // 🔧 ИСПРАВЛЕНО v1.7.6 - таймаут запроса 15 секунд
 initialUsers: [
 { id: 'u1', login: 'skvortsova.ts', password_hash: '', role: 'employee', full_name: 'Скворцова Т.С.', is_archived: false },
 { id: 'u2', login: 'lysova.nv', password_hash: '', role: 'employee', full_name: 'Лысова Н.В.', is_archived: false },
@@ -520,62 +528,73 @@ initialContractVersions: {
 },
 initialAuditLog: []
 };
+// 🔧 ИСПРАВЛЕНО v1.7.6 - Функция sanitizeJSON для очистки пробелов в ключах
+function sanitizeJSON(obj) {
+if (obj === null || typeof obj !== 'object') return obj;
+if (Array.isArray(obj)) return obj.map(sanitizeJSON);
+const sanitized = {};
+for (const [key, value] of Object.entries(obj)) {
+const cleanKey = key.trim();
+if (typeof value === 'string') {
+sanitized[cleanKey] = value.trim();
+} else if (typeof value === 'object' && value !== null) {
+sanitized[cleanKey] = sanitizeJSON(value);
+} else {
+sanitized[cleanKey] = value;
+}
+}
+return sanitized;
+}
 const DB = {
 isReady: false,
 async init() {
 this.isReady = true;
 console.log('✅ Подключено к Supabase');
 },
-async getAll(table) {
-console.log(`📥 Загрузка таблицы: ${table}`);
-try {
+// 🔧 ИСПРАВЛЕНО v1.7.6 - Запрос с таймаутом
+async getAllWithTimeout(table, timeout = CONFIG.requestTimeout) {
+return Promise.race([
+(async () => {
 const { data, error } = await supabaseClient.from(table).select('*');
 if (error) {
-console.error(`❌ Ошибка чтения таблицы ${table}:`, error);
-console.error('Детали ошибки:', error.message);
+console.error(`❌ Ошибка чтения ${table}:`, error);
 return [];
 }
-console.log(`✅ Загружено из ${table}: ${data ? data.length : 0} записей`);
-if (data && data.length > 0) {
-console.log(`📋 Пример данных из ${table}:`, data[0]);
-}
 return data || [];
+})(),
+new Promise((_, reject) =>
+setTimeout(() => reject(new Error(`Таймаут запроса к ${table} (${timeout}мс)`)), timeout)
+)
+]);
+},
+async getAll(table) {
+try {
+const result = await this.getAllWithTimeout(table);
+console.log(`✅ Загружено из ${table}: ${result.length} записей`);
+return result;
 } catch (err) {
-console.error(`❌ Исключение при чтении ${table}:`, err);
+console.warn(`⚠️ ${table}: ${err.message} - возвращаем пустой массив`);
 return [];
 }
 },
 async put(table, data) {
-console.log(`💾 Запись в таблицу ${table}:`, data);
 try {
 const { error } = await supabaseClient.from(table).upsert(data);
-if (error) {
-console.error(`❌ Ошибка записи в ${table}:`, error);
-} else {
-console.log(`✅ Успешно записано в ${table}`);
-}
+if (error) console.error('❌ Ошибка записи:', error);
 } catch (err) {
-console.error(`❌ Исключение при записи в ${table}:`, err);
+console.error('❌ Исключение при записи:', err);
 }
 },
 async delete(table, id) {
-console.log(`🗑 Удаление из ${table} ID: ${id}`);
 try {
 const { error } = await supabaseClient.from(table).delete().eq('id', id);
-if (error) {
-console.error(`❌ Ошибка удаления из ${table}:`, error);
-} else {
-console.log(`✅ Успешно удалено из ${table}`);
-}
+if (error) console.error('❌ Ошибка удаления:', error);
 } catch (err) {
-console.error(`❌ Исключение при удалении из ${table}:`, err);
+console.error('❌ Исключение при удалении:', err);
 }
 },
-async seedData() {
-// Данные уже в Supabase
-},
+async seedData() {},
 async addAuditLog(entry) {
-console.log('📝 Добавление записи в журнал аудита:', entry);
 try {
 const { error } = await supabaseClient.from('audit_log').insert([{
 type: entry.type,
@@ -587,13 +606,9 @@ is_archival: entry.isArchival || false,
 user_id: entry.user_id,
 user_login: entry.user_login
 }]);
-if (error) {
-console.error('❌ Ошибка добавления в журнал аудита:', error);
-} else {
-console.log('✅ Успешно добавлено в журнал аудита');
-}
+if (error) console.error('❌ Ошибка аудита:', error);
 } catch (err) {
-console.error('❌ Исключение при добавлении в журнал аудита:', err);
+console.error('❌ Исключение при аудите:', err);
 }
 }
 };
@@ -813,42 +828,54 @@ App.ui.renderCurrentWork();
 }
 },
 ui: {
+// 🔧 ИСПРАВЛЕНО v1.7.6 - Показ индикатора загрузки
+showLoading(text = 'Загрузка данных...') {
+document.getElementById('loading-text').textContent = text;
+document.getElementById('loading-overlay').classList.remove('hidden');
+},
+hideLoading() {
+document.getElementById('loading-overlay').classList.add('hidden');
+},
 async initApp() {
+this.showLoading('Загрузка данных...');
 console.log('🚀 Инициализация приложения...');
-console.log('DB.isReady:', DB.isReady);
 try {
 if (DB.isReady) {
-console.log('📥 Загрузка данных из Supabase (параллельно)...');
-console.time('⏱ Загрузка всех данных');
-// 🔧 ИСПРАВЛЕНО v1.7.6 - Параллельная загрузка вместо последовательной
-const [users, deductions, actInfoVersions, allContracts, auditLog, tasks] = await Promise.all([
-DB.getAll('users'),
-DB.getAll('deductions'),
-DB.getAll('act_info_versions'),
-DB.getAll('contract_versions'),
-DB.getAll('audit_log'),
-DB.getAll('tasks')
-]);
-App.state.users = users;
-console.log('👥 Пользователи загружены:', App.state.users.length);
-App.state.deductions = deductions;
-console.log('💰 Вычеты загружены:', App.state.deductions.length);
-App.state.actInfoVersions = actInfoVersions;
-console.log('📋 Сведения заказчика загружены:', App.state.actInfoVersions.length);
+// 🔧 ИСПРАВЛЕНО v1.7.6 - Последовательная загрузка с индивидуальной обработкой ошибок
+console.log('📥 Загрузка пользователей...');
+this.showLoading('Загрузка пользователей...');
+try { App.state.users = await DB.getAll('users'); } catch (e) { console.error('Ошибка загрузки users:', e); App.state.users = []; }
+console.log('👥 Пользователи:', App.state.users.length);
+console.log('📥 Загрузка вычетов...');
+this.showLoading('Загрузка вычетов...');
+try { App.state.deductions = await DB.getAll('deductions'); } catch (e) { console.error('Ошибка загрузки deductions:', e); App.state.deductions = []; }
+console.log('💰 Вычеты:', App.state.deductions.length);
+console.log('📥 Загрузка сведений заказчика...');
+this.showLoading('Загрузка сведений заказчика...');
+try { App.state.actInfoVersions = await DB.getAll('act_info_versions'); } catch (e) { console.error('Ошибка загрузки act_info_versions:', e); App.state.actInfoVersions = []; }
+console.log('📋 Сведения заказчика:', App.state.actInfoVersions.length);
+console.log('📥 Загрузка договоров...');
+this.showLoading('Загрузка договоров...');
+try {
+const allContracts = await DB.getAll('contract_versions');
 App.state.contractVersions = {};
 allContracts.forEach(cv => {
 if (!App.state.contractVersions[cv.user_id]) App.state.contractVersions[cv.user_id] = [];
 App.state.contractVersions[cv.user_id].push(cv);
 });
-console.log('📄 Договоры загружены:', Object.keys(App.state.contractVersions).length, 'пользователей');
-App.state.auditLog = auditLog;
-console.log('📝 Журнал аудита загружен:', App.state.auditLog.length);
-App.state.tasks = tasks;
-console.log('✅ Заявки загружены:', App.state.tasks.length);
+console.log('📄 Договоры:', Object.keys(App.state.contractVersions).length, 'пользователей');
+} catch (e) { console.error('Ошибка загрузки contract_versions:', e); App.state.contractVersions = {}; }
+console.log('📥 Загрузка журнала аудита...');
+this.showLoading('Загрузка журнала аудита...');
+try { App.state.auditLog = await DB.getAll('audit_log'); } catch (e) { console.error('Ошибка загрузки audit_log:', e); App.state.auditLog = []; }
+console.log('📝 Журнал аудита:', App.state.auditLog.length);
+console.log('📥 Загрузка заявок...');
+this.showLoading('Загрузка заявок...');
+try { App.state.tasks = await DB.getAll('tasks'); } catch (e) { console.error('Ошибка загрузки tasks:', e); App.state.tasks = []; }
+console.log('✅ Заявки:', App.state.tasks.length);
 if (App.state.tasks.length === 0) {
 console.warn('⚠️ ВНИМАНИЕ: Заявки не загружены! Проверьте таблицу tasks в Supabase.');
 }
-console.timeEnd('⏱ Загрузка всех данных');
 } else {
 console.warn('⚠️ DB не готова, используем локальные данные');
 App.state.users = CONFIG.initialUsers;
@@ -869,13 +896,16 @@ const now = new Date();
 document.getElementById('act-month').value = now.getMonth() + 1;
 document.getElementById('act-year').value = now.getFullYear();
 console.log('🎨 Рендеринг интерфейса...');
+this.showLoading('Подготовка интерфейса...');
 this.renderCurrentWork();
 this.initSortHandlers();
 this.restoreAccordionState();
 setInterval(() => this.setSaveStatus('saved'), CONFIG.autoSaveInterval);
 console.log('✅ Инициализация завершена успешно');
+this.hideLoading();
 } catch (error) {
 console.error('❌ Критическая ошибка при инициализации:', error);
+this.hideLoading();
 alert('Ошибка загрузки данных. Попробуйте обновить страницу (Ctrl+F5). Если ошибка повторится, проверьте консоль (F12).');
 }
 },
@@ -977,7 +1007,6 @@ const search = document.getElementById('cw-search').value.toLowerCase();
 if (filterUser !== 'all') filtered = filtered.filter(t => t.user_id === filterUser);
 if (search) filtered = filtered.filter(t => (t.certificate || '').toLowerCase().includes(search) || (t.client_fio || '').toLowerCase().includes(search));
 filtered = this.sortTasks(filtered);
-console.log(`📊 Отображение заявок: всего ${App.state.tasks.length}, после фильтрации ${filtered.length}`);
 filtered.forEach((task, index) => {
 const tr = document.createElement('tr');
 const deductionValue = task.deduction_value || '';

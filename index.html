@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>НВ-КАРД v1.7.7</title>
+<title>НВ-КАРД v1.7.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
@@ -176,7 +176,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 </div>
 <div id="login-screen">
 <div class="login-box">
-<h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.7.7</span></h2>
+<h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.7.8</span></h2>
 <div class="form-group">
 <label for="dev-user-select">Быстрый вход (Dev Mode)</label>
 <select id="dev-user-select"><option value="">-- Выберите пользователя для теста --</option></select>
@@ -204,7 +204,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 <div id="save-status" class="save-status" aria-live="polite"><span>✓</span> Сохранено</div>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.toggleTheme()">☀️/</button>
 <button class="btn btn-sm btn-danger" onclick="App.auth.logout()">Выход</button>
-<div class="version-info">v1.7.7<br>Разработчик: Трегубов Олег</div>
+<div class="version-info">v1.7.8<br>Разработчик: Трегубов Олег</div>
 </div>
 </header>
 <nav class="tabs">
@@ -274,7 +274,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 <div class="accordion-controls">
 <button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllBlocks()"> Развернуть все блоки</button>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseAllBlocks()">📁 Свернуть все блоки</button>
-<button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllGroups()">📖 Развернуть все группы</button>
+<button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllGroups()"> Развернуть все группы</button>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseAllGroups()">📕 Свернуть все группы</button>
 </div>
 <div class="settings-block" id="settings-block-1">
@@ -484,12 +484,13 @@ const SUPABASE_URL = 'https://rfyirxyenmrveckbdvye.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_g4IrvSIIHb9_dC9QueozoQ_mornNV_S';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const CONFIG = {
-version: '1.7.7',
+version: '1.7.8',
 dbName: 'NVKardDB',
 dbVersion: 6,
 inactivityTimeout: 60 * 60 * 1000,
 autoSaveInterval: 60 * 1000,
-requestTimeout: 15000,
+requestTimeout: 30000,
+maxRetries: 1,
 initialUsers: [
 { id: 'u1', login: 'skvortsova.ts', password_hash: '', role: 'employee', full_name: 'Скворцова Т.С.', is_archived: false },
 { id: 'u2', login: 'lysova.nv', password_hash: '', role: 'employee', full_name: 'Лысова Н.В.', is_archived: false },
@@ -566,14 +567,26 @@ setTimeout(() => reject(new Error(`Таймаут запроса к ${table} (${
 ]);
 },
 async getAll(table) {
+const maxAttempts = 1 + CONFIG.maxRetries;
+let lastError = null;
+for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 try {
+if (attempt > 1) {
+console.log(`🔄 Retry запроса к ${table} (попытка ${attempt}/${maxAttempts})`);
+}
 const result = await this.getAllWithTimeout(table);
 console.log(`✅ Загружено из ${table}: ${result.length} записей`);
 return result;
 } catch (err) {
-console.warn(`⚠️ ${table}: ${err.message} - возвращаем пустой массив`);
-return [];
+lastError = err;
+console.warn(`️ ${table}: ${err.message}`);
+if (attempt < maxAttempts) {
+await new Promise(resolve => setTimeout(resolve, 1000));
 }
+}
+}
+console.error(`❌ ${table}: все ${maxAttempts} попыток неудачны - возвращаем пустой массив`);
+return [];
 },
 async put(table, data) {
 try {
@@ -625,7 +638,8 @@ inactivityTimer: null,
 deleteTargetId: null,
 sortColumn: null,
 sortDirection: 'asc',
-pendingTaskIds: new Set()
+pendingTaskIds: new Set(),
+failedTables: []
 },
 auth: {
 async hashPassword(password) {
@@ -835,20 +849,21 @@ document.getElementById('loading-overlay').classList.add('hidden');
 },
 async initApp() {
 this.showLoading('Загрузка данных...');
-console.log(' Инициализация приложения...');
+console.log('🚀 Инициализация приложения...');
+App.state.failedTables = [];
 try {
 if (DB.isReady) {
 console.log('📥 Загрузка пользователей...');
 this.showLoading('Загрузка пользователей...');
-try { App.state.users = await DB.getAll('users'); } catch (e) { console.error('Ошибка загрузки users:', e); App.state.users = []; }
-console.log('👥 Пользователи:', App.state.users.length);
+try { App.state.users = await DB.getAll('users'); } catch (e) { console.error('Ошибка загрузки users:', e); App.state.users = []; App.state.failedTables.push('users'); }
+console.log(' Пользователи:', App.state.users.length);
 console.log('📥 Загрузка вычетов...');
 this.showLoading('Загрузка вычетов...');
-try { App.state.deductions = await DB.getAll('deductions'); } catch (e) { console.error('Ошибка загрузки deductions:', e); App.state.deductions = []; }
+try { App.state.deductions = await DB.getAll('deductions'); } catch (e) { console.error('Ошибка загрузки deductions:', e); App.state.deductions = []; App.state.failedTables.push('deductions'); }
 console.log('💰 Вычеты:', App.state.deductions.length);
 console.log('📥 Загрузка сведений заказчика...');
 this.showLoading('Загрузка сведений заказчика...');
-try { App.state.actInfoVersions = await DB.getAll('act_info_versions'); } catch (e) { console.error('Ошибка загрузки act_info_versions:', e); App.state.actInfoVersions = []; }
+try { App.state.actInfoVersions = await DB.getAll('act_info_versions'); } catch (e) { console.error('Ошибка загрузки act_info_versions:', e); App.state.actInfoVersions = []; App.state.failedTables.push('act_info_versions'); }
 console.log('📋 Сведения заказчика:', App.state.actInfoVersions.length);
 console.log(' Загрузка договоров...');
 this.showLoading('Загрузка договоров...');
@@ -860,17 +875,23 @@ if (!App.state.contractVersions[cv.user_id]) App.state.contractVersions[cv.user_
 App.state.contractVersions[cv.user_id].push(cv);
 });
 console.log('📄 Договоры:', Object.keys(App.state.contractVersions).length, 'пользователей');
-} catch (e) { console.error('Ошибка загрузки contract_versions:', e); App.state.contractVersions = {}; }
+} catch (e) { console.error('Ошибка загрузки contract_versions:', e); App.state.contractVersions = {}; App.state.failedTables.push('contract_versions'); }
 console.log('📥 Загрузка журнала аудита...');
 this.showLoading('Загрузка журнала аудита...');
-try { App.state.auditLog = await DB.getAll('audit_log'); } catch (e) { console.error('Ошибка загрузки audit_log:', e); App.state.auditLog = []; }
+try { App.state.auditLog = await DB.getAll('audit_log'); } catch (e) { console.error('Ошибка загрузки audit_log:', e); App.state.auditLog = []; App.state.failedTables.push('audit_log'); }
 console.log('📝 Журнал аудита:', App.state.auditLog.length);
-console.log('📥 Загрузка заявок...');
+console.log(' Загрузка заявок...');
 this.showLoading('Загрузка заявок...');
-try { App.state.tasks = await DB.getAll('tasks'); } catch (e) { console.error('Ошибка загрузки tasks:', e); App.state.tasks = []; }
+try { App.state.tasks = await DB.getAll('tasks'); } catch (e) { console.error('Ошибка загрузки tasks:', e); App.state.tasks = []; App.state.failedTables.push('tasks'); }
 console.log('✅ Заявки:', App.state.tasks.length);
 if (App.state.tasks.length === 0) {
 console.warn('⚠️ ВНИМАНИЕ: Заявки не загружены! Проверьте таблицу tasks в Supabase.');
+}
+if (App.state.failedTables.includes('act_info_versions')) {
+console.error('❌ КРИТИЧНО: Не удалось загрузить сведения Заказчика!');
+setTimeout(() => {
+alert('️ Не удалось загрузить сведения Заказчика из базы данных.\n\nПроверьте подключение к интернету или попробуйте позже.\n\nАкты будут сформированы без этих данных.');
+}, 500);
 }
 } else {
 console.warn('⚠️ DB не готова, используем локальные данные');
@@ -900,7 +921,7 @@ setInterval(() => this.setSaveStatus('saved'), CONFIG.autoSaveInterval);
 console.log('✅ Инициализация завершена успешно');
 this.hideLoading();
 } catch (error) {
-console.error('❌ Критическая ошибка при инициализации:', error);
+console.error(' Критическая ошибка при инициализации:', error);
 this.hideLoading();
 alert('Ошибка загрузки данных. Попробуйте обновить страницу (Ctrl+F5). Если ошибка повторится, проверьте консоль (F12).');
 }
@@ -948,7 +969,7 @@ if (status === 'saving') el.innerHTML = '<span>⏳</span> Сохранение..
 else if (status === 'saved') {
 if (pendingCount > 0) { el.innerHTML = `<span>⚠️</span> В памяти (${pendingCount})`; el.title = `${pendingCount} задач в памяти`; }
 else { el.innerHTML = '<span>✓</span> Сохранено'; el.title = 'Автосохранение: каждую минуту'; }
-} else { el.innerHTML = '<span>⚠️</span> Ошибка'; }
+} else { el.innerHTML = '<span>️</span> Ошибка'; }
 },
 populateUserFilter() {
 const select = document.getElementById('cw-filter-user');
@@ -1807,6 +1828,10 @@ const wb = XLSX.utils.table_to_book(table, { sheet: "Акт" });
 XLSX.writeFile(wb, `Акт_НВ_Кард_${new Date().toISOString().split('T')[0]}.xlsx`);
 },
 generateWord() {
+if (App.state.actInfoVersions.length === 0) {
+const proceed = confirm('⚠️ Сведения Заказчика не загружены из базы данных.\n\nАкт будет сформирован без этих данных (вместо ФИО и доверенности будут прочерки).\n\nПродолжить генерацию?');
+if (!proceed) return;
+}
 const month = parseInt(document.getElementById('act-month').value);
 const year = parseInt(document.getElementById('act-year').value);
 const executorFilter = document.getElementById('act-filter-executor').value;
@@ -1858,7 +1883,6 @@ tableRows += `<tr>
 const actInfoFullName = actInfo ? actInfo.full_name : '________';
 const actInfoPoa = actInfo ? actInfo.poa : '________';
 const actInfoShortName = actInfo ? actInfo.short_name : '________';
-// 🔧 ИСПРАВЛЕНО v1.7.7 - Диагностическое логирование для выявления проблемы с актом
 console.log(' ГЕНЕРАЦИЯ WORD:');
 console.log('periodDate:', periodDate);
 console.log('actInfo:', actInfo);
@@ -1945,6 +1969,10 @@ const blob = new Blob(['\ufeff', wordContent], { type: 'application/msword' });
 saveAs(blob, `Акт-отчет_${year}-${month.toString().padStart(2, '0')}_${executorUser.full_name.replace(/\s+/g, '_')}.doc`);
 },
 showActPreview() {
+if (App.state.actInfoVersions.length === 0) {
+const proceed = confirm('⚠️ Сведения Заказчика не загружены из базы данных.\n\nАкт будет отображён без этих данных (вместо ФИО и доверенности будут прочерки).\n\nПродолжить просмотр?');
+if (!proceed) return;
+}
 const month = parseInt(document.getElementById('act-month').value);
 const year = parseInt(document.getElementById('act-year').value);
 const executorFilter = document.getElementById('act-filter-executor').value;
@@ -1987,7 +2015,6 @@ return { num: index + 1, date: formatDate(new Date(task.fill_date)), service: se
 const actInfoFullName = actInfo ? actInfo.full_name : '________';
 const actInfoPoa = actInfo ? actInfo.poa : '________';
 const actInfoShortName = actInfo ? actInfo.short_name : '________';
-// 🔧 ИСПРАВЛЕНО v1.7.7 - Диагностическое логирование для выявления проблемы с актом
 console.log(' ПРОСМОТР АКТА:');
 console.log('periodDate:', periodDate);
 console.log('actInfo:', actInfo);

@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>НВ-КАРД v1.7.6</title>
+<title>НВ-КАРД v1.7.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
@@ -176,7 +176,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 </div>
 <div id="login-screen">
 <div class="login-box">
-<h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.7.6</span></h2>
+<h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.7.7</span></h2>
 <div class="form-group">
 <label for="dev-user-select">Быстрый вход (Dev Mode)</label>
 <select id="dev-user-select"><option value="">-- Выберите пользователя для теста --</option></select>
@@ -204,7 +204,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 <div id="save-status" class="save-status" aria-live="polite"><span>✓</span> Сохранено</div>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.toggleTheme()">☀️/</button>
 <button class="btn btn-sm btn-danger" onclick="App.auth.logout()">Выход</button>
-<div class="version-info">v1.7.6<br>Разработчик: Трегубов Олег</div>
+<div class="version-info">v1.7.7<br>Разработчик: Трегубов Олег</div>
 </div>
 </header>
 <nav class="tabs">
@@ -272,7 +272,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 </div>
 <div id="tab-settings" class="tab-content">
 <div class="accordion-controls">
-<button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllBlocks()">📂 Развернуть все блоки</button>
+<button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllBlocks()"> Развернуть все блоки</button>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseAllBlocks()">📁 Свернуть все блоки</button>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllGroups()">📖 Развернуть все группы</button>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseAllGroups()">📕 Свернуть все группы</button>
@@ -423,7 +423,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 <div class="form-group"><label>Дата окончания действия</label><input type="date" id="edit-ai-end-date" readonly style="background-color: var(--row-zebra);"><div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Дата окончания рассчитывается автоматически</div></div>
 <div class="form-group"><label>Причина изменения *</label><textarea id="edit-ai-reason" placeholder="Опишите причину изменения"></textarea><div class="warning-box"><strong>⚠️ Внимание:</strong> Вы редактируете <span id="edit-ai-version-type">версию</span>. Это изменение будет зафиксировано в журнале аудита.</div></div>
 <div class="modal-actions">
-<button class="btn btn-warning" onclick="App.settings.restoreActInfoOriginal()">↩️ Восстановить оригинал</button>
+<button class="btn btn-warning" onclick="App.settings.restoreActInfoOriginal()">️ Восстановить оригинал</button>
 <button class="btn btn-danger" onclick="App.settings.deleteActInfoVersion()">🗑️ Удалить версию</button>
 <button class="btn btn-secondary" onclick="App.ui.closeModal('modal-edit-act-info')">Отмена</button>
 <button class="btn btn-primary" onclick="App.settings.saveActInfoEdit()">💾 Сохранить</button>
@@ -484,12 +484,12 @@ const SUPABASE_URL = 'https://rfyirxyenmrveckbdvye.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_g4IrvSIIHb9_dC9QueozoQ_mornNV_S';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const CONFIG = {
-version: '1.7.6',
+version: '1.7.7',
 dbName: 'NVKardDB',
 dbVersion: 6,
 inactivityTimeout: 60 * 60 * 1000,
 autoSaveInterval: 60 * 1000,
-requestTimeout: 15000, // 🔧 ИСПРАВЛЕНО v1.7.6 - таймаут запроса 15 секунд
+requestTimeout: 15000,
 initialUsers: [
 { id: 'u1', login: 'skvortsova.ts', password_hash: '', role: 'employee', full_name: 'Скворцова Т.С.', is_archived: false },
 { id: 'u2', login: 'lysova.nv', password_hash: '', role: 'employee', full_name: 'Лысова Н.В.', is_archived: false },
@@ -528,7 +528,6 @@ initialContractVersions: {
 },
 initialAuditLog: []
 };
-// 🔧 ИСПРАВЛЕНО v1.7.6 - Функция sanitizeJSON для очистки пробелов в ключах
 function sanitizeJSON(obj) {
 if (obj === null || typeof obj !== 'object') return obj;
 if (Array.isArray(obj)) return obj.map(sanitizeJSON);
@@ -551,7 +550,6 @@ async init() {
 this.isReady = true;
 console.log('✅ Подключено к Supabase');
 },
-// 🔧 ИСПРАВЛЕНО v1.7.6 - Запрос с таймаутом
 async getAllWithTimeout(table, timeout = CONFIG.requestTimeout) {
 return Promise.race([
 (async () => {
@@ -828,7 +826,6 @@ App.ui.renderCurrentWork();
 }
 },
 ui: {
-// 🔧 ИСПРАВЛЕНО v1.7.6 - Показ индикатора загрузки
 showLoading(text = 'Загрузка данных...') {
 document.getElementById('loading-text').textContent = text;
 document.getElementById('loading-overlay').classList.remove('hidden');
@@ -838,10 +835,9 @@ document.getElementById('loading-overlay').classList.add('hidden');
 },
 async initApp() {
 this.showLoading('Загрузка данных...');
-console.log('🚀 Инициализация приложения...');
+console.log(' Инициализация приложения...');
 try {
 if (DB.isReady) {
-// 🔧 ИСПРАВЛЕНО v1.7.6 - Последовательная загрузка с индивидуальной обработкой ошибок
 console.log('📥 Загрузка пользователей...');
 this.showLoading('Загрузка пользователей...');
 try { App.state.users = await DB.getAll('users'); } catch (e) { console.error('Ошибка загрузки users:', e); App.state.users = []; }
@@ -854,7 +850,7 @@ console.log('📥 Загрузка сведений заказчика...');
 this.showLoading('Загрузка сведений заказчика...');
 try { App.state.actInfoVersions = await DB.getAll('act_info_versions'); } catch (e) { console.error('Ошибка загрузки act_info_versions:', e); App.state.actInfoVersions = []; }
 console.log('📋 Сведения заказчика:', App.state.actInfoVersions.length);
-console.log('📥 Загрузка договоров...');
+console.log(' Загрузка договоров...');
 this.showLoading('Загрузка договоров...');
 try {
 const allContracts = await DB.getAll('contract_versions');
@@ -895,7 +891,7 @@ this.populateActExecutorFilter();
 const now = new Date();
 document.getElementById('act-month').value = now.getMonth() + 1;
 document.getElementById('act-year').value = now.getFullYear();
-console.log('🎨 Рендеринг интерфейса...');
+console.log(' Рендеринг интерфейса...');
 this.showLoading('Подготовка интерфейса...');
 this.renderCurrentWork();
 this.initSortHandlers();
@@ -1862,6 +1858,14 @@ tableRows += `<tr>
 const actInfoFullName = actInfo ? actInfo.full_name : '________';
 const actInfoPoa = actInfo ? actInfo.poa : '________';
 const actInfoShortName = actInfo ? actInfo.short_name : '________';
+// 🔧 ИСПРАВЛЕНО v1.7.7 - Диагностическое логирование для выявления проблемы с актом
+console.log(' ГЕНЕРАЦИЯ WORD:');
+console.log('periodDate:', periodDate);
+console.log('actInfo:', actInfo);
+console.log('actInfoVersions:', App.state.actInfoVersions);
+console.log('actInfoFullName:', actInfoFullName);
+console.log('actInfoPoa:', actInfoPoa);
+console.log('actInfoShortName:', actInfoShortName);
 const wordContent = `
 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head><meta charset='utf-8'><title>Акт-отчет</title></head>
@@ -1983,6 +1987,14 @@ return { num: index + 1, date: formatDate(new Date(task.fill_date)), service: se
 const actInfoFullName = actInfo ? actInfo.full_name : '________';
 const actInfoPoa = actInfo ? actInfo.poa : '________';
 const actInfoShortName = actInfo ? actInfo.short_name : '________';
+// 🔧 ИСПРАВЛЕНО v1.7.7 - Диагностическое логирование для выявления проблемы с актом
+console.log(' ПРОСМОТР АКТА:');
+console.log('periodDate:', periodDate);
+console.log('actInfo:', actInfo);
+console.log('actInfoVersions:', App.state.actInfoVersions);
+console.log('actInfoFullName:', actInfoFullName);
+console.log('actInfoPoa:', actInfoPoa);
+console.log('actInfoShortName:', actInfoShortName);
 const actHTML = `
 <div class="act-document" id="act-for-export">
 <div class="act-header">

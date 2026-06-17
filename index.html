@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>НВ-КАРД v1.7.10</title>
+<title>НВ-КАРД v1.8.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
@@ -163,13 +163,17 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 .warning-box strong { color: var(--warning); }
 .exclude-checkbox { cursor: pointer; width: 18px; height: 18px; }
 .price-info { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.loading-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.loading-spinner { border: 3px solid var(--border); border-top: 3px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.load-more-btn { text-align: center; padding: 12px; margin-top: 8px; }
 @media print { header, .tabs, .toolbar, .no-print { display: none !important; } body { background-color: white !important; color: black !important; } .modal-overlay.active { position: static; background: none; } .modal { box-shadow: none; max-height: none; overflow: visible; transform: none; padding: 0; width: 100%; } }
 </style>
 </head>
 <body>
 <div id="login-screen">
 <div class="login-box">
-<h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.7.10</span></h2>
+<h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.8.0</span></h2>
 <div class="form-group">
 <label for="dev-user-select">Быстрый вход (Dev Mode)</label>
 <select id="dev-user-select"><option value="">-- Выберите пользователя для теста --</option></select>
@@ -195,9 +199,9 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 </div>
 <div class="header-right">
 <div id="save-status" class="save-status" aria-live="polite"><span>✓</span> Сохранено</div>
-<button class="btn btn-sm btn-secondary" onclick="App.ui.toggleTheme()">☀️/</button>
+<button class="btn btn-sm btn-secondary" onclick="App.ui.toggleTheme()">☀️/🌙</button>
 <button class="btn btn-sm btn-danger" onclick="App.auth.logout()">Выход</button>
-<div class="version-info">v1.7.10<br>Разработчик: Трегубов Олег</div>
+<div class="version-info">v1.8.0<br>Разработчик: Трегубов Олег</div>
 </div>
 </header>
 <nav class="tabs">
@@ -210,11 +214,12 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 <div class="toolbar">
 <div class="toolbar-filters">
 <select id="cw-filter-user" class="admin-only hidden" onchange="App.ui.renderCurrentWork()"><option value="all">Все сотрудники</option></select>
-<input type="text" id="cw-search" placeholder="Поиск по заявке или ФИО..." style="padding:8px; border:1px solid var(--border); border-radius:4px; min-width: 250px;" oninput="App.ui.renderCurrentWork()">
+<input type="text" id="cw-search" placeholder="Поиск по заявке или ФИО..." style="padding:8px; border:1px solid var(--border); border-radius:4px; min-width: 250px;" oninput="App.ui.handleSearchInput()">
 </div>
 <button class="btn btn-primary" onclick="App.logic.addTaskRow()">+ Добавить строку</button>
 </div>
-<div class="table-container">
+<div class="table-container" style="position: relative;">
+<div id="cw-loading" class="loading-overlay hidden"><div class="loading-spinner"></div></div>
 <table class="data-table" id="cw-table">
 <thead><tr>
 <th style="width:40px" class="sortable" data-sort="index">№</th>
@@ -234,6 +239,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 </tr></thead>
 <tbody id="cw-tbody"></tbody>
 </table>
+<div id="cw-load-more" class="load-more-btn hidden"><button class="btn btn-sm btn-secondary" onclick="App.ui.loadMoreTasks()">Загрузить ещё (осталось: <span id="cw-remaining">0</span>)</button></div>
 </div>
 </div>
 <div id="tab-acts" class="tab-content">
@@ -265,7 +271,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 </div>
 <div id="tab-settings" class="tab-content">
 <div class="accordion-controls">
-<button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllBlocks()"> Развернуть все блоки</button>
+<button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllBlocks()">📂 Развернуть все блоки</button>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseAllBlocks()">📁 Свернуть все блоки</button>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllGroups()">📖 Развернуть все группы</button>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseAllGroups()">📕 Свернуть все группы</button>
@@ -386,7 +392,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 <div class="form-group"><label>Единица измерения</label><select id="edit-deduction-unit"><option value="штука">штука</option><option value="стр.">стр.</option></select></div>
 <div class="form-group"><label>Дата начала действия *</label><input type="date" id="edit-deduction-date"></div>
 <div class="form-group"><label>Дата окончания действия</label><input type="date" id="edit-deduction-end-date"><div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Дата окончания рассчитывается автоматически, но можно изменить вручную</div></div>
-<div class="form-group"><label>Причина изменения *</label><textarea id="edit-deduction-reason" placeholder="Опишите причину изменения (например: Ошибка ввода при создании, Уточнение цены и т.д.)"></textarea><div class="warning-box"><strong>️ Внимание:</strong> Вы редактируете <span id="edit-deduction-version-type">версию</span>. Это изменение будет зафиксировано в журнале аудита.</div></div>
+<div class="form-group"><label>Причина изменения *</label><textarea id="edit-deduction-reason" placeholder="Опишите причину изменения (например: Ошибка ввода при создании, Уточнение цены и т.д.)"></textarea><div class="warning-box"><strong>⚠️ Внимание:</strong> Вы редактируете <span id="edit-deduction-version-type">версию</span>. Это изменение будет зафиксировано в журнале аудита.</div></div>
 <div class="modal-actions">
 <button class="btn btn-warning" onclick="App.settings.restoreDeductionOriginal()">↩️ Восстановить оригинал</button>
 <button class="btn btn-danger" onclick="App.settings.deleteDeductionVersion()">🗑️ Удалить версию</button>
@@ -477,12 +483,14 @@ const SUPABASE_URL = 'https://rfyirxyenmrveckbdvye.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_g4IrvSIIHb9_dC9QueozoQ_mornNV_S';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const CONFIG = {
-version: '1.7.10',
+version: '1.8.0',
 dbName: 'NVKardDB',
 dbVersion: 6,
 inactivityTimeout: 60 * 60 * 1000,
 autoSaveInterval: 60 * 1000,
 keepAliveInterval: 2 * 60 * 1000,
+tasksPageSize: 50,
+cacheDuration: 3600000,
 initialUsers: [
 { id: 'u1', login: 'skvortsova.ts', password_hash: '', role: 'employee', full_name: 'Скворцова Т.С.', is_archived: false },
 { id: 'u2', login: 'lysova.nv', password_hash: '', role: 'employee', full_name: 'Лысова Н.В.', is_archived: false },
@@ -521,6 +529,31 @@ initialContractVersions: {
 },
 initialAuditLog: []
 };
+// 🔧 КЭШИРОВАНИЕ
+const Cache = {
+get(key) {
+try {
+const cached = localStorage.getItem(`nvkard_cache_${key}`);
+if (!cached) return null;
+const { data, timestamp } = JSON.parse(cached);
+if (Date.now() - timestamp > CONFIG.cacheDuration) {
+localStorage.removeItem(`nvkard_cache_${key}`);
+return null;
+}
+return data;
+} catch (e) { return null; }
+},
+set(key, data) {
+try {
+localStorage.setItem(`nvkard_cache_${key}`, JSON.stringify({ data, timestamp: Date.now() }));
+} catch (e) { console.warn('Не удалось сохранить в кэш:', e); }
+},
+clear() {
+Object.keys(localStorage).forEach(key => {
+if (key.startsWith('nvkard_cache_')) localStorage.removeItem(key);
+});
+}
+};
 const DB = {
 isReady: false,
 async init() {
@@ -543,6 +576,19 @@ return [];
 }
 console.log(`✅ Загружено из ${table}: ${data ? data.length : 0} записей`);
 return data || [];
+},
+async getTasksPaginated(limit, offset) {
+const { data, error, count } = await supabaseClient
+.from('tasks')
+.select('*', { count: 'exact' })
+.order('fill_date', { ascending: false })
+.range(offset, offset + limit - 1);
+if (error) {
+console.error('❌ Ошибка чтения задач:', error);
+return { tasks: [], total: 0 };
+}
+console.log(`✅ Загружено задач: ${data ? data.length : 0} из ${count || 0}`);
+return { tasks: data || [], total: count || 0 };
 },
 async put(table, data) {
 const { error } = await supabaseClient.from(table).upsert(data);
@@ -582,7 +628,15 @@ inactivityTimer: null,
 deleteTargetId: null,
 sortColumn: null,
 sortDirection: 'asc',
-pendingTaskIds: new Set()
+pendingTaskIds: new Set(),
+// 📄 Пагинация
+tasksPage: 0,
+tasksTotal: 0,
+tasksLoading: false,
+// 🔄 Debounce
+searchTimeout: null,
+// 📦 Ленивая загрузка
+tabsLoaded: { acts: false, settings: false }
 },
 auth: {
 async hashPassword(password) {
@@ -783,65 +837,41 @@ App.ui.renderCurrentWork();
 }
 },
 ui: {
-//  ИСПРАВЛЕНО v1.7.10 - try/catch для каждого запроса
 async initApp() {
-console.log('🚀 Инициализация приложения...');
-console.log('DB.isReady:', DB.isReady);
+console.log('🚀 Инициализация приложения v1.8.0...');
 if (DB.isReady) {
-// 🔧 Каждый запрос в своём try/catch
+// 🔧 ПАРАЛЛЕЛЬНАЯ ЗАГРУЗКА СПРАВОЧНИКОВ
+console.time('Загрузка справочников');
 try {
-App.state.users = await DB.getAll('users');
-console.log('👥 Пользователи:', App.state.users.length);
-} catch (e) {
-console.error('❌ Ошибка загрузки users:', e);
-App.state.users = [];
-}
-try {
-App.state.deductions = await DB.getAll('deductions');
-console.log('💰 Вычеты:', App.state.deductions.length);
-} catch (e) {
-console.error('❌ Ошибка загрузки deductions:', e);
-App.state.deductions = [];
-}
-try {
-App.state.actInfoVersions = await DB.getAll('act_info_versions');
-console.log('📋 Сведения заказчика:', App.state.actInfoVersions.length);
-} catch (e) {
-console.error('❌ Ошибка загрузки act_info_versions:', e);
-App.state.actInfoVersions = [];
-}
-try {
-const allContracts = await DB.getAll('contract_versions');
+const [users, deductions, actInfo, allContracts, auditLog] = await Promise.all([
+DB.getAll('users'),
+DB.getAll('deductions'),
+DB.getAll('act_info_versions'),
+DB.getAll('contract_versions'),
+DB.getAll('audit_log')
+]);
+App.state.users = users;
+App.state.deductions = deductions;
+App.state.actInfoVersions = actInfo;
 App.state.contractVersions = {};
-// 🔧 Проверка Array.isArray перед forEach
 if (Array.isArray(allContracts)) {
 allContracts.forEach(cv => {
 if (!App.state.contractVersions[cv.user_id]) App.state.contractVersions[cv.user_id] = [];
 App.state.contractVersions[cv.user_id].push(cv);
 });
 }
-console.log('📄 Договоры:', Object.keys(App.state.contractVersions).length, 'пользователей');
+App.state.auditLog = auditLog;
+console.timeEnd('Загрузка справочников');
+// 💾 Кэшируем справочники
+Cache.set('users', users);
+Cache.set('deductions', deductions);
+Cache.set('actInfo', actInfo);
+Cache.set('contracts', allContracts);
 } catch (e) {
-console.error('❌ Ошибка загрузки contract_versions:', e);
-App.state.contractVersions = {};
+console.error('❌ Ошибка загрузки справочников:', e);
 }
-try {
-App.state.auditLog = await DB.getAll('audit_log');
-console.log('📝 Журнал аудита:', App.state.auditLog.length);
-} catch (e) {
-console.error('❌ Ошибка загрузки audit_log:', e);
-App.state.auditLog = [];
-}
-try {
-App.state.tasks = await DB.getAll('tasks');
-console.log('✅ Заявки:', App.state.tasks.length);
-if (App.state.tasks.length === 0) {
-console.warn('️ ВНИМАНИЕ: Заявки не загружены! Проверьте таблицу tasks в Supabase.');
-}
-} catch (e) {
-console.error('❌ Ошибка загрузки tasks:', e);
-App.state.tasks = [];
-}
+// 📄 Загружаем первую страницу задач
+await this.loadTasksPage();
 } else {
 console.warn('⚠️ DB не готова, используем локальные данные');
 App.state.users = CONFIG.initialUsers;
@@ -867,6 +897,42 @@ this.initSortHandlers();
 this.restoreAccordionState();
 setInterval(() => this.setSaveStatus('saved'), CONFIG.autoSaveInterval);
 console.log('✅ Инициализация завершена успешно');
+},
+// 📄 Загрузка страницы задач
+async loadTasksPage() {
+if (App.state.tasksLoading) return;
+App.state.tasksLoading = true;
+document.getElementById('cw-loading').classList.remove('hidden');
+const offset = App.state.tasksPage * CONFIG.tasksPageSize;
+const { tasks, total } = await DB.getTasksPaginated(CONFIG.tasksPageSize, offset);
+App.state.tasks = tasks;
+App.state.tasksTotal = total;
+App.state.tasksPage++;
+document.getElementById('cw-loading').classList.add('hidden');
+App.state.tasksLoading = false;
+this.updateLoadMoreButton();
+},
+// 🔽 Кнопка "Загрузить ещё"
+updateLoadMoreButton() {
+const btn = document.getElementById('cw-load-more');
+const remaining = App.state.tasksTotal - App.state.tasks.length;
+if (remaining > 0) {
+btn.classList.remove('hidden');
+document.getElementById('cw-remaining').textContent = remaining;
+} else {
+btn.classList.add('hidden');
+}
+},
+async loadMoreTasks() {
+await this.loadTasksPage();
+this.renderCurrentWork();
+},
+// 🔍 Debounce для поиска
+handleSearchInput() {
+clearTimeout(App.state.searchTimeout);
+App.state.searchTimeout = setTimeout(() => {
+this.renderCurrentWork();
+}, 300);
 },
 populateActExecutorFilter() {
 const select = document.getElementById('act-filter-executor');
@@ -895,8 +961,15 @@ document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('act
 document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 document.getElementById(`tab-${tabId}`).classList.add('active');
 event.target.classList.add('active');
-if (tabId === 'acts') this.renderActs();
-if (tabId === 'settings') this.renderSettings();
+// 📦 Ленивая загрузка вкладок
+if (tabId === 'acts' && !App.state.tabsLoaded.acts) {
+this.renderActs();
+App.state.tabsLoaded.acts = true;
+}
+if (tabId === 'settings' && !App.state.tabsLoaded.settings) {
+this.renderSettings();
+App.state.tabsLoaded.settings = true;
+}
 },
 toggleTheme() {
 const current = document.documentElement.getAttribute('data-theme');
@@ -1162,7 +1235,7 @@ renderEmployeesList() {
 const empList = document.getElementById('settings-employees-list');
 empList.innerHTML = '';
 App.state.users.filter(u => u.role === 'employee').forEach(u => {
-empList.innerHTML += `<div class="settings-row"><div><div style="font-weight:500">${u.full_name}</div><div style="font-size:12px; color:var(--text-secondary)">Логин: ${u.login} <span style="cursor:pointer; margin-left:8px;" onclick="navigator.clipboard.writeText('${u.login}')" title="Копировать"></span></div></div><div style="display:flex; gap:8px; align-items:center;"><span class="password-field" id="pwd-${u.id}">••••••••</span><button class="btn btn-sm btn-secondary" onclick="App.settings.revealPassword('${u.id}', '${CONFIG.initialPasswords[u.login] || 'сменен'}')">Показать</button><button class="btn btn-sm ${u.is_archived ? 'btn-primary' : 'btn-secondary'}" onclick="App.settings.toggleArchive('${u.id}')">${u.is_archived ? 'Восстановить' : 'В архив'}</button></div></div>`;
+empList.innerHTML += `<div class="settings-row"><div><div style="font-weight:500">${u.full_name}</div><div style="font-size:12px; color:var(--text-secondary)">Логин: ${u.login} <span style="cursor:pointer; margin-left:8px;" onclick="navigator.clipboard.writeText('${u.login}')" title="Копировать">📋</span></div></div><div style="display:flex; gap:8px; align-items:center;"><span class="password-field" id="pwd-${u.id}">••••••••</span><button class="btn btn-sm btn-secondary" onclick="App.settings.revealPassword('${u.id}', '${CONFIG.initialPasswords[u.login] || 'сменен'}')">Показать</button><button class="btn btn-sm ${u.is_archived ? 'btn-primary' : 'btn-secondary'}" onclick="App.settings.toggleArchive('${u.id}')">${u.is_archived ? 'Восстановить' : 'В архив'}</button></div></div>`;
 });
 },
 renderDeductionsList() {

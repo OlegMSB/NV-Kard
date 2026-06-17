@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>НВ-КАРД v1.7.9</title>
+<title>НВ-КАРД v1.7.10</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
@@ -169,7 +169,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 <body>
 <div id="login-screen">
 <div class="login-box">
-<h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.7.9</span></h2>
+<h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.7.10</span></h2>
 <div class="form-group">
 <label for="dev-user-select">Быстрый вход (Dev Mode)</label>
 <select id="dev-user-select"><option value="">-- Выберите пользователя для теста --</option></select>
@@ -197,7 +197,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 <div id="save-status" class="save-status" aria-live="polite"><span>✓</span> Сохранено</div>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.toggleTheme()">☀️/</button>
 <button class="btn btn-sm btn-danger" onclick="App.auth.logout()">Выход</button>
-<div class="version-info">v1.7.9<br>Разработчик: Трегубов Олег</div>
+<div class="version-info">v1.7.10<br>Разработчик: Трегубов Олег</div>
 </div>
 </header>
 <nav class="tabs">
@@ -265,7 +265,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 </div>
 <div id="tab-settings" class="tab-content">
 <div class="accordion-controls">
-<button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllBlocks()">📂 Развернуть все блоки</button>
+<button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllBlocks()"> Развернуть все блоки</button>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseAllBlocks()">📁 Свернуть все блоки</button>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.expandAllGroups()">📖 Развернуть все группы</button>
 <button class="btn btn-sm btn-secondary" onclick="App.ui.collapseAllGroups()">📕 Свернуть все группы</button>
@@ -386,7 +386,7 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 <div class="form-group"><label>Единица измерения</label><select id="edit-deduction-unit"><option value="штука">штука</option><option value="стр.">стр.</option></select></div>
 <div class="form-group"><label>Дата начала действия *</label><input type="date" id="edit-deduction-date"></div>
 <div class="form-group"><label>Дата окончания действия</label><input type="date" id="edit-deduction-end-date"><div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Дата окончания рассчитывается автоматически, но можно изменить вручную</div></div>
-<div class="form-group"><label>Причина изменения *</label><textarea id="edit-deduction-reason" placeholder="Опишите причину изменения (например: Ошибка ввода при создании, Уточнение цены и т.д.)"></textarea><div class="warning-box"><strong>⚠️ Внимание:</strong> Вы редактируете <span id="edit-deduction-version-type">версию</span>. Это изменение будет зафиксировано в журнале аудита.</div></div>
+<div class="form-group"><label>Причина изменения *</label><textarea id="edit-deduction-reason" placeholder="Опишите причину изменения (например: Ошибка ввода при создании, Уточнение цены и т.д.)"></textarea><div class="warning-box"><strong>️ Внимание:</strong> Вы редактируете <span id="edit-deduction-version-type">версию</span>. Это изменение будет зафиксировано в журнале аудита.</div></div>
 <div class="modal-actions">
 <button class="btn btn-warning" onclick="App.settings.restoreDeductionOriginal()">↩️ Восстановить оригинал</button>
 <button class="btn btn-danger" onclick="App.settings.deleteDeductionVersion()">🗑️ Удалить версию</button>
@@ -477,12 +477,12 @@ const SUPABASE_URL = 'https://rfyirxyenmrveckbdvye.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_g4IrvSIIHb9_dC9QueozoQ_mornNV_S';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const CONFIG = {
-version: '1.7.9',
+version: '1.7.10',
 dbName: 'NVKardDB',
 dbVersion: 6,
 inactivityTimeout: 60 * 60 * 1000,
 autoSaveInterval: 60 * 1000,
-keepAliveInterval: 2 * 60 * 1000, // 🔧 ИСПРАВЛЕНО v1.7.9 - Keep-alive каждые 2 минуты
+keepAliveInterval: 2 * 60 * 1000,
 initialUsers: [
 { id: 'u1', login: 'skvortsova.ts', password_hash: '', role: 'employee', full_name: 'Скворцова Т.С.', is_archived: false },
 { id: 'u2', login: 'lysova.nv', password_hash: '', role: 'employee', full_name: 'Лысова Н.В.', is_archived: false },
@@ -527,7 +527,6 @@ async init() {
 this.isReady = true;
 console.log('✅ Подключено к Supabase');
 },
-// 🔧 ИСПРАВЛЕНО v1.7.9 - Keep-alive механизм
 async keepAlive() {
 try {
 await supabaseClient.from('users').select('id').limit(1);
@@ -784,24 +783,64 @@ App.ui.renderCurrentWork();
 }
 },
 ui: {
+//  ИСПРАВЛЕНО v1.7.10 - try/catch для каждого запроса
 async initApp() {
 console.log('🚀 Инициализация приложения...');
 console.log('DB.isReady:', DB.isReady);
 if (DB.isReady) {
+// 🔧 Каждый запрос в своём try/catch
+try {
 App.state.users = await DB.getAll('users');
+console.log('👥 Пользователи:', App.state.users.length);
+} catch (e) {
+console.error('❌ Ошибка загрузки users:', e);
+App.state.users = [];
+}
+try {
 App.state.deductions = await DB.getAll('deductions');
+console.log('💰 Вычеты:', App.state.deductions.length);
+} catch (e) {
+console.error('❌ Ошибка загрузки deductions:', e);
+App.state.deductions = [];
+}
+try {
 App.state.actInfoVersions = await DB.getAll('act_info_versions');
+console.log('📋 Сведения заказчика:', App.state.actInfoVersions.length);
+} catch (e) {
+console.error('❌ Ошибка загрузки act_info_versions:', e);
+App.state.actInfoVersions = [];
+}
+try {
 const allContracts = await DB.getAll('contract_versions');
 App.state.contractVersions = {};
+// 🔧 Проверка Array.isArray перед forEach
+if (Array.isArray(allContracts)) {
 allContracts.forEach(cv => {
 if (!App.state.contractVersions[cv.user_id]) App.state.contractVersions[cv.user_id] = [];
 App.state.contractVersions[cv.user_id].push(cv);
 });
+}
+console.log('📄 Договоры:', Object.keys(App.state.contractVersions).length, 'пользователей');
+} catch (e) {
+console.error('❌ Ошибка загрузки contract_versions:', e);
+App.state.contractVersions = {};
+}
+try {
 App.state.auditLog = await DB.getAll('audit_log');
+console.log('📝 Журнал аудита:', App.state.auditLog.length);
+} catch (e) {
+console.error('❌ Ошибка загрузки audit_log:', e);
+App.state.auditLog = [];
+}
+try {
 App.state.tasks = await DB.getAll('tasks');
 console.log('✅ Заявки:', App.state.tasks.length);
 if (App.state.tasks.length === 0) {
-console.warn('⚠️ ВНИМАНИЕ: Заявки не загружены! Проверьте таблицу tasks в Supabase.');
+console.warn('️ ВНИМАНИЕ: Заявки не загружены! Проверьте таблицу tasks в Supabase.');
+}
+} catch (e) {
+console.error('❌ Ошибка загрузки tasks:', e);
+App.state.tasks = [];
 }
 } else {
 console.warn('⚠️ DB не готова, используем локальные данные');
@@ -1974,7 +2013,7 @@ alert('Активная сессия уже открыта в другой вк�
 App.auth.logout();
 }
 };
-// 🔧 ИСПРАВЛЕНО v1.7.9 - Запуск keep-alive каждые 2 минуты
+// 🔧 Keep-alive каждые 2 минуты
 setInterval(() => DB.keepAlive(), CONFIG.keepAliveInterval);
 });
 </script>

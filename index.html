@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>НВ-КАРД v1.8.0</title>
+<title>НВ-КАРД v1.8.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
@@ -163,17 +163,13 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 .warning-box strong { color: var(--warning); }
 .exclude-checkbox { cursor: pointer; width: 18px; height: 18px; }
 .price-info { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
-.loading-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.loading-spinner { border: 3px solid var(--border); border-top: 3px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-.load-more-btn { text-align: center; padding: 12px; margin-top: 8px; }
 @media print { header, .tabs, .toolbar, .no-print { display: none !important; } body { background-color: white !important; color: black !important; } .modal-overlay.active { position: static; background: none; } .modal { box-shadow: none; max-height: none; overflow: visible; transform: none; padding: 0; width: 100%; } }
 </style>
 </head>
 <body>
 <div id="login-screen">
 <div class="login-box">
-<h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.8.0</span></h2>
+<h2>НВ-КАРД <span style="font-size:12px; color:var(--text-secondary)">v1.8.1</span></h2>
 <div class="form-group">
 <label for="dev-user-select">Быстрый вход (Dev Mode)</label>
 <select id="dev-user-select"><option value="">-- Выберите пользователя для теста --</option></select>
@@ -199,9 +195,9 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 </div>
 <div class="header-right">
 <div id="save-status" class="save-status" aria-live="polite"><span>✓</span> Сохранено</div>
-<button class="btn btn-sm btn-secondary" onclick="App.ui.toggleTheme()">☀️/🌙</button>
+<button class="btn btn-sm btn-secondary" onclick="App.ui.toggleTheme()">☀️/</button>
 <button class="btn btn-sm btn-danger" onclick="App.auth.logout()">Выход</button>
-<div class="version-info">v1.8.0<br>Разработчик: Трегубов Олег</div>
+<div class="version-info">v1.8.1<br>Разработчик: Трегубов Олег</div>
 </div>
 </header>
 <nav class="tabs">
@@ -214,12 +210,11 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 <div class="toolbar">
 <div class="toolbar-filters">
 <select id="cw-filter-user" class="admin-only hidden" onchange="App.ui.renderCurrentWork()"><option value="all">Все сотрудники</option></select>
-<input type="text" id="cw-search" placeholder="Поиск по заявке или ФИО..." style="padding:8px; border:1px solid var(--border); border-radius:4px; min-width: 250px;" oninput="App.ui.handleSearchInput()">
+<input type="text" id="cw-search" placeholder="Поиск по заявке или ФИО..." style="padding:8px; border:1px solid var(--border); border-radius:4px; min-width: 250px;" oninput="App.ui.renderCurrentWork()">
 </div>
 <button class="btn btn-primary" onclick="App.logic.addTaskRow()">+ Добавить строку</button>
 </div>
-<div class="table-container" style="position: relative;">
-<div id="cw-loading" class="loading-overlay hidden"><div class="loading-spinner"></div></div>
+<div class="table-container">
 <table class="data-table" id="cw-table">
 <thead><tr>
 <th style="width:40px" class="sortable" data-sort="index">№</th>
@@ -239,7 +234,6 @@ main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding
 </tr></thead>
 <tbody id="cw-tbody"></tbody>
 </table>
-<div id="cw-load-more" class="load-more-btn hidden"><button class="btn btn-sm btn-secondary" onclick="App.ui.loadMoreTasks()">Загрузить ещё (осталось: <span id="cw-remaining">0</span>)</button></div>
 </div>
 </div>
 <div id="tab-acts" class="tab-content">
@@ -483,14 +477,11 @@ const SUPABASE_URL = 'https://rfyirxyenmrveckbdvye.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_g4IrvSIIHb9_dC9QueozoQ_mornNV_S';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const CONFIG = {
-version: '1.8.0',
+version: '1.8.1',
 dbName: 'NVKardDB',
 dbVersion: 6,
 inactivityTimeout: 60 * 60 * 1000,
 autoSaveInterval: 60 * 1000,
-keepAliveInterval: 2 * 60 * 1000,
-tasksPageSize: 50,
-cacheDuration: 3600000,
 initialUsers: [
 { id: 'u1', login: 'skvortsova.ts', password_hash: '', role: 'employee', full_name: 'Скворцова Т.С.', is_archived: false },
 { id: 'u2', login: 'lysova.nv', password_hash: '', role: 'employee', full_name: 'Лысова Н.В.', is_archived: false },
@@ -529,66 +520,34 @@ initialContractVersions: {
 },
 initialAuditLog: []
 };
-// 🔧 КЭШИРОВАНИЕ
-const Cache = {
-get(key) {
-try {
-const cached = localStorage.getItem(`nvkard_cache_${key}`);
-if (!cached) return null;
-const { data, timestamp } = JSON.parse(cached);
-if (Date.now() - timestamp > CONFIG.cacheDuration) {
-localStorage.removeItem(`nvkard_cache_${key}`);
-return null;
-}
-return data;
-} catch (e) { return null; }
-},
-set(key, data) {
-try {
-localStorage.setItem(`nvkard_cache_${key}`, JSON.stringify({ data, timestamp: Date.now() }));
-} catch (e) { console.warn('Не удалось сохранить в кэш:', e); }
-},
-clear() {
-Object.keys(localStorage).forEach(key => {
-if (key.startsWith('nvkard_cache_')) localStorage.removeItem(key);
-});
-}
-};
+
+// 🔧 v1.8.1 - RETRY LOGIC с экспоненциальной задержкой
 const DB = {
 isReady: false,
 async init() {
 this.isReady = true;
 console.log('✅ Подключено к Supabase');
 },
-async keepAlive() {
+async getAll(table, retries = 3) {
+for (let attempt = 1; attempt <= retries; attempt++) {
 try {
-await supabaseClient.from('users').select('id').limit(1);
-console.log('💓 Keep-alive: Supabase активен');
-} catch (err) {
-console.error('❌ Keep-alive ошибка:', err);
-}
-},
-async getAll(table) {
+const startTime = performance.now();
 const { data, error } = await supabaseClient.from(table).select('*');
-if (error) {
-console.error('❌ Ошибка чтения:', error);
+const duration = Math.round(performance.now() - startTime);
+if (error) throw error;
+console.log(`✅ [${attempt}/${retries}] ${table}: ${data ? data.length : 0} записей за ${duration}мс`);
+return data || [];
+} catch (err) {
+console.warn(`⚠️ Попытка ${attempt}/${retries} для ${table} не удалась:`, err.message);
+if (attempt === retries) {
+console.error(`❌ Все попытки загрузки ${table} исчерпаны`);
 return [];
 }
-console.log(`✅ Загружено из ${table}: ${data ? data.length : 0} записей`);
-return data || [];
-},
-async getTasksPaginated(limit, offset) {
-const { data, error, count } = await supabaseClient
-.from('tasks')
-.select('*', { count: 'exact' })
-.order('fill_date', { ascending: false })
-.range(offset, offset + limit - 1);
-if (error) {
-console.error('❌ Ошибка чтения задач:', error);
-return { tasks: [], total: 0 };
+// Экспоненциальная задержка: 1с, 2с, 4с
+const delay = Math.pow(2, attempt - 1) * 1000;
+await new Promise(resolve => setTimeout(resolve, delay));
 }
-console.log(`✅ Загружено задач: ${data ? data.length : 0} из ${count || 0}`);
-return { tasks: data || [], total: count || 0 };
+}
 },
 async put(table, data) {
 const { error } = await supabaseClient.from(table).upsert(data);
@@ -613,7 +572,9 @@ user_login: entry.user_login
 if (error) console.error('❌ Ошибка аудита:', error);
 }
 };
+
 const sessionChannel = new BroadcastChannel('nv-kard-session');
+
 App = {
 state: {
 currentUser: null,
@@ -629,14 +590,7 @@ deleteTargetId: null,
 sortColumn: null,
 sortDirection: 'asc',
 pendingTaskIds: new Set(),
-// 📄 Пагинация
-tasksPage: 0,
-tasksTotal: 0,
-tasksLoading: false,
-// 🔄 Debounce
-searchTimeout: null,
-// 📦 Ленивая загрузка
-tabsLoaded: { acts: false, settings: false }
+isInitializing: false // 🔧 v1.8.1 - Флаг защиты от дублирования
 },
 auth: {
 async hashPassword(password) {
@@ -837,22 +791,46 @@ App.ui.renderCurrentWork();
 }
 },
 ui: {
+// 🔧 v1.8.1 - ЗАЩИТА ОТ ДУБЛИРОВАНИЯ + ПОСЛЕДОВАТЕЛЬНАЯ ЗАГРУЗКА
 async initApp() {
-console.log('🚀 Инициализация приложения v1.8.0...');
-if (DB.isReady) {
-// 🔧 ПАРАЛЛЕЛЬНАЯ ЗАГРУЗКА СПРАВОЧНИКОВ
-console.time('Загрузка справочников');
+// Защита от повторного вызова
+if (App.state.isInitializing) {
+console.warn('⚠️ initApp() уже выполняется, пропускаем дублирующий вызов');
+return;
+}
+App.state.isInitializing = true;
+
+const totalStart = performance.now();
+console.log('🚀 Инициализация приложения v1.8.1...');
+
 try {
-const [users, deductions, actInfo, allContracts, auditLog] = await Promise.all([
-DB.getAll('users'),
-DB.getAll('deductions'),
-DB.getAll('act_info_versions'),
-DB.getAll('contract_versions'),
-DB.getAll('audit_log')
-]);
-App.state.users = users;
-App.state.deductions = deductions;
-App.state.actInfoVersions = actInfo;
+if (DB.isReady) {
+// 🔧 v1.8.1 - ПОСЛЕДОВАТЕЛЬНАЯ загрузка вместо Promise.all
+console.log('📥 Загрузка данных из Supabase (последовательно)...');
+
+try {
+App.state.users = await DB.getAll('users');
+} catch (e) {
+console.error('❌ Ошибка загрузки users:', e);
+App.state.users = [];
+}
+
+try {
+App.state.deductions = await DB.getAll('deductions');
+} catch (e) {
+console.error('❌ Ошибка загрузки deductions:', e);
+App.state.deductions = [];
+}
+
+try {
+App.state.actInfoVersions = await DB.getAll('act_info_versions');
+} catch (e) {
+console.error('❌ Ошибка загрузки act_info_versions:', e);
+App.state.actInfoVersions = [];
+}
+
+try {
+const allContracts = await DB.getAll('contract_versions');
 App.state.contractVersions = {};
 if (Array.isArray(allContracts)) {
 allContracts.forEach(cv => {
@@ -860,18 +838,28 @@ if (!App.state.contractVersions[cv.user_id]) App.state.contractVersions[cv.user_
 App.state.contractVersions[cv.user_id].push(cv);
 });
 }
-App.state.auditLog = auditLog;
-console.timeEnd('Загрузка справочников');
-// 💾 Кэшируем справочники
-Cache.set('users', users);
-Cache.set('deductions', deductions);
-Cache.set('actInfo', actInfo);
-Cache.set('contracts', allContracts);
 } catch (e) {
-console.error('❌ Ошибка загрузки справочников:', e);
+console.error('❌ Ошибка загрузки contract_versions:', e);
+App.state.contractVersions = {};
 }
-// 📄 Загружаем первую страницу задач
-await this.loadTasksPage();
+
+try {
+App.state.auditLog = await DB.getAll('audit_log');
+} catch (e) {
+console.error('❌ Ошибка загрузки audit_log:', e);
+App.state.auditLog = [];
+}
+
+try {
+App.state.tasks = await DB.getAll('tasks');
+if (App.state.tasks.length === 0) {
+console.warn('⚠️ ВНИМАНИЕ: Заявки не загружены! Проверьте таблицу tasks в Supabase.');
+}
+} catch (e) {
+console.error('❌ Ошибка загрузки tasks:', e);
+App.state.tasks = [];
+}
+
 } else {
 console.warn('⚠️ DB не готова, используем локальные данные');
 App.state.users = CONFIG.initialUsers;
@@ -881,58 +869,39 @@ App.state.contractVersions = JSON.parse(JSON.stringify(CONFIG.initialContractVer
 App.state.auditLog = JSON.parse(JSON.stringify(CONFIG.initialAuditLog));
 if (!App.state.tasks || App.state.tasks.length === 0) App.state.tasks = [];
 }
+
 const badge = document.getElementById('user-role-badge');
 badge.textContent = App.state.viewedRole === 'superadmin' ? 'Супер-администратор' : App.state.viewedRole === 'admin' ? 'Администратор' : 'Сотрудник';
 badge.className = `role-badge role-${App.state.viewedRole}`;
+
 if (App.state.currentUser.role === 'superadmin') document.getElementById('role-switcher').classList.remove('hidden');
-if (App.state.viewedRole !== 'employee') { document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden')); this.populateUserFilter(); }
-else { document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden')); }
+
+if (App.state.viewedRole !== 'employee') {
+document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+this.populateUserFilter();
+} else {
+document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+}
+
 this.populateActExecutorFilter();
+
 const now = new Date();
 document.getElementById('act-month').value = now.getMonth() + 1;
 document.getElementById('act-year').value = now.getFullYear();
+
 console.log('🎨 Рендеринг интерфейса...');
 this.renderCurrentWork();
 this.initSortHandlers();
 this.restoreAccordionState();
+
 setInterval(() => this.setSaveStatus('saved'), CONFIG.autoSaveInterval);
-console.log('✅ Инициализация завершена успешно');
-},
-// 📄 Загрузка страницы задач
-async loadTasksPage() {
-if (App.state.tasksLoading) return;
-App.state.tasksLoading = true;
-document.getElementById('cw-loading').classList.remove('hidden');
-const offset = App.state.tasksPage * CONFIG.tasksPageSize;
-const { tasks, total } = await DB.getTasksPaginated(CONFIG.tasksPageSize, offset);
-App.state.tasks = tasks;
-App.state.tasksTotal = total;
-App.state.tasksPage++;
-document.getElementById('cw-loading').classList.add('hidden');
-App.state.tasksLoading = false;
-this.updateLoadMoreButton();
-},
-// 🔽 Кнопка "Загрузить ещё"
-updateLoadMoreButton() {
-const btn = document.getElementById('cw-load-more');
-const remaining = App.state.tasksTotal - App.state.tasks.length;
-if (remaining > 0) {
-btn.classList.remove('hidden');
-document.getElementById('cw-remaining').textContent = remaining;
-} else {
-btn.classList.add('hidden');
+
+const totalTime = Math.round(performance.now() - totalStart);
+console.log(`✅ Инициализация завершена за ${totalTime}мс`);
+
+} finally {
+App.state.isInitializing = false;
 }
-},
-async loadMoreTasks() {
-await this.loadTasksPage();
-this.renderCurrentWork();
-},
-// 🔍 Debounce для поиска
-handleSearchInput() {
-clearTimeout(App.state.searchTimeout);
-App.state.searchTimeout = setTimeout(() => {
-this.renderCurrentWork();
-}, 300);
 },
 populateActExecutorFilter() {
 const select = document.getElementById('act-filter-executor');
@@ -961,15 +930,8 @@ document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('act
 document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 document.getElementById(`tab-${tabId}`).classList.add('active');
 event.target.classList.add('active');
-// 📦 Ленивая загрузка вкладок
-if (tabId === 'acts' && !App.state.tabsLoaded.acts) {
-this.renderActs();
-App.state.tabsLoaded.acts = true;
-}
-if (tabId === 'settings' && !App.state.tabsLoaded.settings) {
-this.renderSettings();
-App.state.tabsLoaded.settings = true;
-}
+if (tabId === 'acts') this.renderActs();
+if (tabId === 'settings') this.renderSettings();
 },
 toggleTheme() {
 const current = document.documentElement.getAttribute('data-theme');
@@ -2064,6 +2026,7 @@ App.ui.setSaveStatus('saved');
 }
 }
 };
+
 window.addEventListener('DOMContentLoaded', function() {
 const devSelect = document.getElementById('dev-user-select');
 devSelect.innerHTML = '<option value="">-- Выберите пользователя для теста --</option>';
@@ -2086,8 +2049,7 @@ alert('Активная сессия уже открыта в другой вк�
 App.auth.logout();
 }
 };
-// 🔧 Keep-alive каждые 2 минуты
-setInterval(() => DB.keepAlive(), CONFIG.keepAliveInterval);
+// 🔧 v1.8.1 - УБРАЛИ keep-alive (создавал лишние запросы)
 });
 </script>
 </body>
